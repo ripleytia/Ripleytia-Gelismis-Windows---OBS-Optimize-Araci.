@@ -46,7 +46,6 @@ Standart "kör debloat" araçlarının aksine, bu uygulama ses sürücülerini v
 ### 3. 🧠 Bellek & NVMe Disk İyileştirmeleri
 * **16 GB Bellek Çökme Koruması (DisablePagingExecutive = 0):** FiveM, GTA V ve OBS eş zamanlı çalışırken `OUT_OF_MEMORY` kilitlenmelerini engeller.
 * **IoPageLockLimit (8 MB):** Disk okuma/yazma I/O arabelleğini 8 megabayta çıkararak harita ve özel araç yüklemelerini hızlandırır.
-* **SysMain (Superfetch) Kapatma:** NVMe SSD'lerde gereksiz yazma döngülerini ve %1 Low FPS dalgalanmalarını bitirir.
 * **NTFS 8.3 & Son Erişim Zamanı Kapatma:** Gereksiz dosya sistemi loglamasını durdurur.
 * **Hazırda Bekletmeyi Kapatma (`powercfg -h off`):** C: diskinde anında 16 GB - 32 GB arası boş depolama alanı açar.
 
@@ -57,16 +56,24 @@ Standart "kör debloat" araçlarının aksine, bu uygulama ses sürücülerini v
 * **MMCSS Yüksek Ses Önceliği (High Priority):** Yayın, Discord ve oyun aynı anda çalışırken seste patlama, cızırtı ve gecikmeleri tamamen yok eder.
 * **TCP CUBIC & Delivery Optimization LAN Modu:** İnternet upload bant genişliğinin Windows güncellemeleri tarafından çalınmasını engeller.
 
-### 5. 🛡️ Hizmetler & Temizlik
-* **Ndu Servisi Kapatma:** Micro-stutter yapan ağ kullanım izleme sürücüsünü durdurur.
-* **Telemetri ve Hata Raporlama Kapatma:** DiagTrack, WerSvc ve zamanlanmış telemetri görevlerini durdurur.
-* **Gereksiz 12 Mağaza Uygulamasını Temizleme (AppX Bloat).**
-* **Windows 11 Not Defteri Açık Kalan Sekmeleri Temizleme & Kapatma:** Arka plan oturum önbellek birikimini sıfırlar.
-
-### 6. 🎯 FiveM & Oyun Özel Ayarları
+### 5. 🎯 FiveM & Oyun Özel Ayarları
 * **FiveM Bellek Havuzu Artırımı (CitizenFX.ini):** `TxdStore` (32000), `DrmStore` (32000), `FragStore` (16000) havuzlarını genişleterek modlu sunucularda harita altının kaybolmasını engeller.
 * **GTA V `commandline.txt`:** `-ignoreDifferentVideoCard` ve `-novblank` parametrelerini oluşturur.
-* **Windows Defender Oyun & Yayın Dışlamaları:** FiveM, GTA V, OBS ve Discord için gerçek zamanlı tarama darboğazını engeller.
+* **Windows Defender Oyun & Yayın Dışlamaları:** FiveM, GTA V, OBS ve Discord için gerçek zamanlı tarama darboğazını engeller (Antivirüs kapatılmaz, yalnızca oyun klasörleri taranırken drop yememeniz için resmi dışlama tanımlanır).
+
+---
+
+## 🛡️ Anti-Cheat & Whitelist Güvenlik Garantisi (PC Check Uyumlu)
+
+Bu araç, rekabetçi FiveM ve espor sunucularındaki en katı **Anti-Cheat ve PC Check (Bilgisayar Kontrol)** kurallarına %100 uyumlu olarak geliştirilmiştir:
+
+* 🚫 **Windows Hizmetleri Devre Dışı Bırakılmaz:** Windows'un hiçbir dahili sistem servisi (`services.msc`) kapatılmaz, askıya alınmaz veya bozulmaz. Custom OS gerektirmez.
+* 🚫 **Defender Kapatılmaz:** Windows Defender / Gerçek Zamanlı Virüs ve Tehdit Koruması ASLA devre dışı bırakılmaz. `Defender Control` veya benzeri yasaklı yazılımlar kesinlikle bulunmaz ve kullanılmaz.
+* 🚫 **Genel Uninstaller & Cleaner Değildir:** CCleaner veya şüpheli cleaner/uninstaller yazılımlarının aksine sistem loglarını veya kayıt defterini körlemesine silmez.
+* 🚫 **Makro / Strafe / Key Mapping Bulunmaz:** `Keys2XInput`, `Strafe Macro`, klavye giriş hızını yapay düşüren veya tekrarlayan hiçbir donanım/yazılım emülasyonu içermez.
+* 🚫 **Oyun İçi Avantaj RPF / Mod İçermez:** `No roll`, `No recoil`, `No bush`, `Mini no bush` gibi oyun bütünlüğünü bozan hiçbir RPF dosyası veya bellek enjeksiyonu barındırmaz.
+* 🚫 **Yasaklı AI / Bot Kodları İçermez:** Uygulamadaki yapay zeka modülü sadece OBS bitrate ve yayın ayarlarını hesaplamak içindir; oyun süreçlerine müdahale etmez.
+* ✅ **Gönül Rahatlığıyla Kullanım:** Sunucu yetkilileri veya kontrol ekibi bilgisayarınızı incelediğinde 3. Parti Kapsamında Değerlendirilen hiçbir kuralı ihlal etmez.
 
 ---
 
@@ -99,9 +106,9 @@ Uygulama açık kaynak kodludur, hiçbir harici reklam veya zararlı kod içerme
 * **Dosya Adı:** `Ripleytia ST Opti V2.exe`
 * **SHA-256 Dijital Parmak İzi:**
   ```text
-  fab49b77ab33b533fd08fb9e8fb710a91cb4ecb76101cec0f14c71a366298d49
+  012d6dc2cc97c21011ca6f940857859a6d3c582307904ae709b629e108978fe8
   ```
-* **VirusTotal Raporu:** [VirusTotal Doğrulama Bağlantısı](https://www.virustotal.com/gui/file/fab49b77ab33b533fd08fb9e8fb710a91cb4ecb76101cec0f14c71a366298d49)
+* **VirusTotal Raporu:** [VirusTotal Doğrulama Bağlantısı](https://www.virustotal.com/gui/file/012d6dc2cc97c21011ca6f940857859a6d3c582307904ae709b629e108978fe8)
 
 ---
 
@@ -115,8 +122,8 @@ Uygulama açık kaynak kodludur, hiçbir harici reklam veya zararlı kod içerme
 ### Yöntem 2: Kaynak Koddan Çalıştırma
 ```powershell
 # Depoyu klonlayın
-git clone https://github.com/Ripleytia/Ripleytia_ST_Opti_V2.git
-cd Ripleytia_ST_Opti_V2
+git clone https://github.com/ripleytia/ripleytia-optimizasyon.git
+cd ripleytia-optimizasyon
 
 # Gerekli bağımlılıkları yükleyin
 pip install customtkinter pillow requests

@@ -54,20 +54,6 @@ def reg_del(hive, path, name):
     except OSError:
         return False
 
-def svc_state(name):
-    out = run_ps(f"(Get-Service -Name '{name}' -ErrorAction SilentlyContinue).StartType")
-    return out.strip()
-
-def svc_set(name, mode, stop=True):
-    run_cmd(f"sc.exe config {name} start= {mode}")
-    if stop and mode == "disabled":
-        run_ps(f"Stop-Service -Name '{name}' -Force -ErrorAction SilentlyContinue")
-
-def task_off(tn):
-    run_cmd(f'schtasks /change /tn "{tn}" /disable')
-
-def task_on(tn):
-    run_cmd(f'schtasks /change /tn "{tn}" /enable')
 
 # ==============================================================================
 # TWEAK VERİTABANI
@@ -280,18 +266,7 @@ TWEAKS = {
             ),
             "apply": lambda: reg_set(HKLM, r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management", "IoPageLockLimit", 8388608),
             "undo": lambda: reg_del(HKLM, r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management", "IoPageLockLimit")
-        },
-        {
-            "id": "mem_sysmain_off",
-            "title": "SysMain (Superfetch) Kapatma",
-            "desc": "Windows'un uygulamaları önceden RAM'e doldurmaya çalışan arka plan disk tarayıcısını kapatır.",
-            "advantage": "NVMe SSD'lerde gereksiz yazma döngülerini ve %1 Low FPS dalgalanmalarını bitirir.",
-            "check": lambda: (
-                svc_state("SysMain") in ["Disabled", ""],
-                "SysMain: " + (svc_state("SysMain") or "Kapalı")
-            ),
-            "apply": lambda: svc_set("SysMain", "disabled"),
-            "undo": lambda: svc_set("SysMain", "auto", stop=False)
+
         },
         {
             "id": "mem_ntfs_opti",
@@ -423,89 +398,7 @@ TWEAKS = {
     ],
 
     # --------------------------------------------------------------------------
-    # 5. HİZMETLER & DEBLOAT
-    # --------------------------------------------------------------------------
-    "services": [
-        {
-            "id": "svc_ndu_off",
-            "title": "Ndu Servisi Kapatma",
-            "desc": "Windows Ağ Veri Kullanımı İzleme sürücüsünü kapatır.",
-            "advantage": "Birçok oyuncunun yaşadığı bellek sızıntısını (RAM leak) ve oyun içi micro-stutter'ı ortadan kaldırır.",
-            "check": lambda: (
-                svc_state("Ndu") in ["Disabled", ""],
-                "Ndu: " + (svc_state("Ndu") or "Disabled")
-            ),
-            "apply": lambda: svc_set("Ndu", "disabled"),
-            "undo": lambda: svc_set("Ndu", "auto", stop=False)
-        },
-        {
-            "id": "svc_telemetry_off",
-            "title": "Telemetri Servisleri Kapatma (DiagTrack, MapsBroker vb.)",
-            "desc": "Microsoft'a donanım ve kullanım verisi gönderen telemetri servislerini durdurur.",
-            "advantage": "Arka plan CPU ve internet tüketimini azaltır, gizliliği korur.",
-            "check": lambda: (
-                svc_state("DiagTrack") in ["Disabled", ""],
-                "DiagTrack: " + (svc_state("DiagTrack") or "Disabled")
-            ),
-            "apply": lambda: [svc_set(s, "disabled") for s in ["DiagTrack", "dmwappushservice", "MapsBroker", "RemoteRegistry", "TrkWks", "RetailDemo", "WMPNetworkSvc"]],
-            "undo": lambda: [svc_set(s, "auto", stop=False) for s in ["DiagTrack", "MapsBroker"]]
-        },
-        {
-            "id": "svc_wersvc_off",
-            "title": "Windows Hata Raporlama (WerSvc) Kapatma",
-            "desc": "Uygulamalar kilitlendiğinde Microsoft'a kilitlenme raporu hazırlayan mekanizmayı durdurur.",
-            "advantage": "Oyun veya OBS takılmalarında sistemin kilitlenmesini ve beklemesini önler.",
-            "check": lambda: (
-                svc_state("WerSvc") in ["Disabled", ""],
-                "WerSvc: " + (svc_state("WerSvc") or "Disabled")
-            ),
-            "apply": lambda: svc_set("WerSvc", "disabled"),
-            "undo": lambda: svc_set("WerSvc", "demand", stop=False)
-        },
-        {
-            "id": "svc_tasks_off",
-            "title": "Zamanlanmış Telemetri Görevlerini Kapatma (CEIP, UsbCeip, PcaPatch)",
-            "desc": "Windows Görev Zamanlayıcısı'nda arka planda çalışan telemetri görevlerini kapatır.",
-            "advantage": "İşlemci çekirdeklerinin gereksiz uyanmasını ve arka plan disk yoklamalarını önler.",
-            "check": lambda: (
-                "Disabled" in run_ps("(Get-ScheduledTask -TaskName 'Consolidator' -ErrorAction SilentlyContinue).State"),
-                "Telemetri Görevleri Kapalı"
-            ),
-            "apply": lambda: [task_off(t) for t in [
-                r"\Microsoft\Windows\Customer Experience Improvement Program\Consolidator",
-                r"\Microsoft\Windows\Customer Experience Improvement Program\UsbCeip",
-                r"\Microsoft\Windows\Application Experience\PcaPatchDbTask",
-                r"\Microsoft\Windows\Feedback\Siuf\DmClient",
-                r"\Microsoft\Windows\Flighting\FeatureConfig\UsageDataReporting",
-                r"\Microsoft\Windows\Maps\MapsToastTask"
-            ]],
-            "undo": lambda: [task_on(t) for t in [
-                r"\Microsoft\Windows\Customer Experience Improvement Program\Consolidator",
-                r"\Microsoft\Windows\Customer Experience Improvement Program\UsbCeip"
-            ]]
-        },
-        {
-            "id": "svc_bloat_appx",
-            "title": "Gereksiz 12 Mağaza Uygulamasını Temizleme (AppX Bloat)",
-            "desc": "Clipchamp, BingNews, BingWeather, PhoneLink, FeedbackHub vb. gereksiz paketleri siler.",
-            "advantage": "Yaklaşık 300-500 MB RAM tasarrufu ve temiz bir Başlat menüsü sağlar.",
-            "check": lambda: (None, "İsteğe bağlı temizlik"),
-            "apply": lambda: run_ps("('Clipchamp.Clipchamp','Microsoft.BingNews','Microsoft.BingWeather','Microsoft.GamingApp','Microsoft.XboxGamingOverlay','Microsoft.XboxSpeechToTextOverlay','Microsoft.Xbox.TCUI','Microsoft.YourPhone','Microsoft.GetHelp','Microsoft.WindowsFeedbackHub','Microsoft.PowerAutomateDesktop','MicrosoftCorporationII.MicrosoftFamily') | ForEach-Object { Get-AppxPackage -Name $_ | Remove-AppxPackage -ErrorAction SilentlyContinue }"),
-            "undo": lambda: None
-        },
-        {
-            "id": "svc_notepad_clean",
-            "title": "Windows 11 Not Defteri Açık Kalan Sekmeleri Temizleme & Kapatma",
-            "desc": "Not Defteri'nin arkada bıraktığı oturum önbelleklerini temizler ve eski sekmeleri geri açma özelliğini kapatır.",
-            "advantage": "RAM ve disk önbellek birikimini sıfırlar, her açılışta tertemiz hızlı Not Defteri sunar.",
-            "check": lambda: (None, "Oturum önbelleğini sıfırla"),
-            "apply": lambda: run_ps("Get-ChildItem -Path \"$env:LOCALAPPDATA\\Packages\\Microsoft.WindowsNotepad_8wekyb3d8bbwe\\LocalState\\TabState\" -Filter '*.bin' -ErrorAction SilentlyContinue | Remove-Item -Force"),
-            "undo": lambda: None
-        }
-    ],
-
-    # --------------------------------------------------------------------------
-    # 6. FIVEM & DEFENDER
+    # 5. FIVEM & DEFENDER
     # --------------------------------------------------------------------------
     "fivem": [
         {
@@ -568,7 +461,7 @@ TWEAKS = {
 
 # Tek tıkla hepsini uygulayan liste
 ALL_RECOMMENDED = []
-for group in ["power", "gpu", "memory", "network", "services", "fivem"]:
+for group in ["power", "gpu", "memory", "network", "fivem"]:
     for item in TWEAKS[group]:
         ALL_RECOMMENDED.append(item)
 

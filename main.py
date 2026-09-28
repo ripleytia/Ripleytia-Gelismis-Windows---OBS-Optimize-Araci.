@@ -246,13 +246,12 @@ class RipleytiaApp(ctk.CTk):
         )
         self.tabview.grid(row=1, column=0, sticky="nsew", padx=14, pady=4)
 
-        # Sekme İsimleri (Hepsi Türkçe)
+        # Sekme İsimleri (Hepsi Türkçe - Anti-Cheat Uyumlu)
         self.tab_dash = self.tabview.add("📊 Gösterge Paneli")
         self.tab_power = self.tabview.add("⚡ Güç & İşlemci")
         self.tab_gpu = self.tabview.add("🎮 Grafik & Ekran")
         self.tab_mem = self.tabview.add("🧠 Bellek & Disk")
         self.tab_net = self.tabview.add("🌐 Ağ & Düşük Gecikme")
-        self.tab_svc = self.tabview.add("🛡️ Hizmetler & Temizlik")
         self.tab_fivem = self.tabview.add("🎯 FiveM & Oyunlar")
         self.tab_obs = self.tabview.add("🎥 OBS Stüdyo & Yapay Zeka")
 
@@ -262,7 +261,6 @@ class RipleytiaApp(ctk.CTk):
         self._build_tweak_tab(self.tab_gpu, "gpu")
         self._build_tweak_tab(self.tab_mem, "memory")
         self._build_tweak_tab(self.tab_net, "network")
-        self._build_tweak_tab(self.tab_svc, "services")
         self._build_tweak_tab(self.tab_fivem, "fivem")
         self._build_obs_tab()
 
