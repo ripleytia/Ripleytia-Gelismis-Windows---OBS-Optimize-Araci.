@@ -1,21 +1,25 @@
 import subprocess
 import shutil
+import zipfile
 import os
 
-print("=== Ripleytia ST Opti V2 EXE Derlemesi Başlıyor ===")
+print("=== Ripleytia ST Opti V2.1 EXE Derlemesi Başlıyor ===")
 base_dir = r"C:\Users\Ripleytia\Documents\Ripleytia_ST_Opti_V2"
 desktop_path = r"C:\Users\Ripleytia\Desktop"
 output_name = "Ripleytia ST Opti V2"
 ico_path = os.path.join(base_dir, "assets", "icon.ico")
+version_path = os.path.join(base_dir, "version_info.txt")
 
 cmd = [
     "pyinstaller",
     "--noconfirm",
+    "--clean",
     "--onefile",
     "--windowed",
     "--uac-admin",
     f"--name={output_name}",
     f"--icon={ico_path}",
+    f"--version-file={version_path}",
     "--collect-all=customtkinter",
     "--add-data=engine;engine",
     "--add-data=assets;assets",
@@ -32,6 +36,12 @@ if os.path.exists(built_exe):
     dest_exe = os.path.join(desktop_path, f"{output_name}.exe")
     shutil.copy2(built_exe, dest_exe)
     print("BAŞARILI: Masaüstüne kopyalandı ->", dest_exe)
+
+    # ZIP Arşivi oluştur
+    zip_dest = os.path.join(desktop_path, f"{output_name}.zip")
+    with zipfile.ZipFile(zip_dest, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.write(dest_exe, f"{output_name}.exe")
+    print("BAŞARILI: Masaüstü ZIP oluşturuldu ->", zip_dest)
 else:
     print("HATA: dist içinde exe bulunamadı!")
     print("STDOUT:", res.stdout[-1500:])

@@ -1,4 +1,4 @@
-# ⚡ Ripleytia Gelişmiş Windows Tweak & Yayıncı Ekosistem Aracı (V2)
+# ⚡ Ripleytia Advanced Windows Tweak & Streamer Ecosystem Tool (v2.1)
 
 <p align="center">
   <img src="assets/logo.png" width="160" alt="Ripleytia Logo" />
@@ -6,109 +6,92 @@
 
 <p align="center">
   <b>Canlı Yayıncılar ve Rekabetçi Oyuncular İçin Gelişmiş Windows 11 & OBS Studio Optimizasyon Merkezi</b><br>
-  <i>Sıfır Giriş Gecikmesi • %1 Low FPS Kararlılığı • Yapay Zeka Destekli OBS Profili</i>
+  <i>Sıfır Giriş Gecikmesi • %1 Low FPS Kararlılığı • Performans Artışı (Overdrive) • Modüler Hizmetler • Yapay Zeka Destekli OBS Profili</i>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue?style=for-the-badge&logo=windows" />
   <img src="https://img.shields.io/badge/Python-3.10%2B-blueviolet?style=for-the-badge&logo=python" />
   <img src="https://img.shields.io/badge/UI-CustomTkinter-blueviolet?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/VirusTotal-Temiz%20(Clean)-brightgreen?style=for-the-badge&logo=virustotal" />
-  <img src="https://img.shields.io/badge/Sürüm-V2.0%20Final-purple?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Windows%20Defender-Temiz%20(0%20Tehdit)-brightgreen?style=for-the-badge&logo=windows" />
+  <img src="https://img.shields.io/badge/Sürüm-v2.1%20(Overdrive%20Edition)-purple?style=for-the-badge" />
 </p>
 
 ---
 
 ## 📖 Genel Bakış
 
-**Ripleytia Gelişmiş Windows Tweak & Yayıncı Ekosistem Aracı (V2)**, oyun oynarken aynı anda OBS Studio, Discord, müzik ve ses yönlendirme yazılımları kullanan yayıncıların karşılaştığı performans darboğazlarını ortadan kaldırmak için tasarlanmış bağımsız bir optimizasyon ekosistemidir.
+**Ripleytia Advanced Windows Tweak & Streamer Ecosystem Tool (v2.1)**, oyun oynarken aynı anda OBS Studio, Discord, müzik ve ses yönlendirme yazılımları kullanan yayıncıların ve espor oyuncularının karşılaştığı tüm performans ve gecikme darboğazlarını ortadan kaldırmak için geliştirilmiş bağımsız bir optimizasyon merkezidir.
 
-Standart "kör debloat" araçlarının aksine, bu uygulama ses sürücülerini veya güvenlik servislerini bozmaz. **Her ayarın yanında ne işe yaradığı, sisteme ne gibi somut avantajlar sağladığı açıkça listelenmiştir** ve her ayar tek tıkla orijinal haline **Geri Alınabilir**.
-
----
-
-## 🎯 Temel Özellikler
-
-### 1. ⚡ Güç & İşlemci Kalibrasyonu
-* **Nihai Performans (Ultimate Performance) Planı:** Windows'un gizli güç profilini açarak saat frekansı dalgalanmalarını ve çekirdek uyku gecikmelerini engeller.
-* **Ryzen Soğutma & Frekans Koruma (Min %0 / Max %100):** AMD Ryzen işlemcilerin masaüstünde serin çalışmasını (38-42°C) sağlar, fan sesini keser ve ağır yükte %100 boostlayarak 80°C+ thermal throttling droplarını bitirir.
-* **Aktif Soğutma Politikası (SysCoolPol = 1):** Fanları erken hızlandırarak ani çatışmalarda ısı kaynaklı FPS kayıplarını sönümler.
-* **USB Seçmeli Askıya Alma Kapatma:** Fare ve klavyede anlık yoklama gecikmesini sıfırlar; yayında USB mikrofon ve kamera kopmalarını/gecikmelerini önler.
-* **PCIe Link State Güç Yönetimi Kapatma (ASPM Off):** GPU ve NVMe SSD veri yolunun uykuya girmesini kapatarak açık dünya oyunlarındaki doku (texture streaming) takılmalarını yok eder.
-
-### 2. 🎮 Grafik & Görüntü Optimizasyonu
-* **HAGS (Donanım Hızlandırmalı GPU Zamanlaması):** Grafik belleği ve kare kuyruğu yönetimini CPU'dan RTX/GTX ekran kartına aktarır; OBS NVENC donanım kodlama gecikmesini düşürür.
-* **Pencereli Oyun İyileştirmeleri (SwapEffectUpgrade):** Çerçevesiz pencereli (borderless) oyunları modern DXGI Independent Flip sunum modeline yükselterek tam ekran gibi 0 ms DWM gecikmesi sağlar.
-* **Küresel Değişken Yenileme Hızı (VRR Global):** Yüksek Hz (144Hz, 200Hz, 240Hz, G-Sync) monitörlerde pencere geçişlerinde yırtılma ve takılmaları önler.
-* **GameDVR & Arka Plan Kaydı İptali:** Windows'un arkada sürekli 30 FPS video kaydetmesini engelleyerek NVENC çipini ve VRAM'i %100 OBS Studio'ya bırakır.
-* **Windows Oyun Modu (Game Mode) Entegrasyonu.**
-
-### 3. 🧠 Bellek & NVMe Disk İyileştirmeleri
-* **16 GB Bellek Çökme Koruması (DisablePagingExecutive = 0):** FiveM, GTA V ve OBS eş zamanlı çalışırken `OUT_OF_MEMORY` kilitlenmelerini engeller.
-* **IoPageLockLimit (8 MB):** Disk okuma/yazma I/O arabelleğini 8 megabayta çıkararak harita ve özel araç yüklemelerini hızlandırır.
-* **NTFS 8.3 & Son Erişim Zamanı Kapatma:** Gereksiz dosya sistemi loglamasını durdurur.
-* **Hazırda Bekletmeyi Kapatma (`powercfg -h off`):** C: diskinde anında 16 GB - 32 GB arası boş depolama alanı açar.
-
-### 4. 🌐 Ağ & Düşük Ping (Yayın Güvenliği)
-* **Nagle Algoritmasını Kapatma (TcpAckFrequency & TCPNoDelay):** TCP paket biriktirme mekanizmasını kapatır; CS2, Valorant, FiveM gibi oyunlarda pingi düşürür, mermi kaydını (hitreg) anlık hale getirir.
-* **Multimedya Ağ Kısıtlamasını Kaldırma (`NetworkThrottlingIndex = 0xFFFFFFFF`):** Oyun veya müzik açıkken Windows'un ağ paket hızını sınırlamasını kaldırır; yayında bitrate dalgalanmalarını engeller.
-* **Sistem Multimedya Tepkiselliği (`SystemResponsiveness = 0`):** CPU gücünün %100'ünü ön plandaki oyuna verir.
-* **MMCSS Yüksek Ses Önceliği (High Priority):** Yayın, Discord ve oyun aynı anda çalışırken seste patlama, cızırtı ve gecikmeleri tamamen yok eder.
-* **TCP CUBIC & Delivery Optimization LAN Modu:** İnternet upload bant genişliğinin Windows güncellemeleri tarafından çalınmasını engeller.
-
-### 5. 🎯 FiveM & Oyun Özel Ayarları
-* **FiveM Bellek Havuzu Artırımı (CitizenFX.ini):** `TxdStore` (32000), `DrmStore` (32000), `FragStore` (16000) havuzlarını genişleterek modlu sunucularda harita altının kaybolmasını engeller.
-* **GTA V `commandline.txt`:** `-ignoreDifferentVideoCard` ve `-novblank` parametrelerini oluşturur.
-* **Windows Defender Oyun & Yayın Dışlamaları:** FiveM, GTA V, OBS ve Discord için gerçek zamanlı tarama darboğazını engeller (Antivirüs kapatılmaz, yalnızca oyun klasörleri taranırken drop yememeniz için resmi dışlama tanımlanır).
+Standart "kör debloat" araçlarının aksine, bu uygulama ses sürücülerini veya güvenlik katmanlarını bozmaz. **Her ayarın yanında ne işe yaradığı, sisteme sağladığı somut avantaj ve varsa dikkat edilmesi gereken uyarılar açıkça listelenmiştir**. Yapılan her ayar tek tıkla orijinal haline **Geri Alınabilir**.
 
 ---
 
-## 🛡️ Anti-Cheat & Whitelist Güvenlik Garantisi (PC Check Uyumlu)
+## 🚀 Sürüm 2.1 ile Gelen Temel Yenilikler
 
-Bu araç, rekabetçi FiveM ve espor sunucularındaki en katı **Anti-Cheat ve PC Check (Bilgisayar Kontrol)** kurallarına %100 uyumlu olarak geliştirilmiştir:
+### 1. 🔥 Yeni "Performans Artışı" (Performance Boost / Overdrive) Bölümü
+Donanımının tüm sınırlarını zorlamak ve oyun içi minimum FPS (%1 Low FPS) değerlerini tavan yaptırmak isteyenler için özel olarak tasarlandı:
+* **Çekirdek Parkı Devre Dışı (Core Unparking %100):** İşlemcinin hiçbir çekirdeği uyku moduna geçmez; tüm mantıksal iş parçacıkları her an maksimum frekansta hazır bekler.
+* **Maksimum Turbo Saat Hızı Kilidi (Min %100 / Max %100):** İşlemcinin frekans düşürmesini (downclock) kapatır; ani çatışmalardaki mikro takılmaları engeller.
+* **Win32PrioritySeparation = 26 (Hex):** Ön plandaki aktif oyuna en kısa ve en değişken CPU dilimini tahsis ederek klavye/fare giriş gecikmesini (input lag) sıfırlar.
+* **Dinamik Zamanlayıcı & HPET Sabitleme:** İşlemci ile işletim sistemi arasındaki zamanlama kaymalarını önler, mikro-saniye hassasiyetinde timer sağlar.
+* **Fare İvmesi ve Smoothing Filtrelerini Nötrleme:** 1:1 saf donanım sensör takibi sağlar.
+* **GPU Maksimum Performans Modu:** Grafik kartının hafif sahnelerde boşta saat hızına düşmesini engeller.
 
-* 🚫 **Windows Hizmetleri Devre Dışı Bırakılmaz:** Windows'un hiçbir dahili sistem servisi (`services.msc`) kapatılmaz, askıya alınmaz veya bozulmaz. Custom OS gerektirmez.
-* 🚫 **Defender Kapatılmaz:** Windows Defender / Gerçek Zamanlı Virüs ve Tehdit Koruması ASLA devre dışı bırakılmaz. `Defender Control` veya benzeri yasaklı yazılımlar kesinlikle bulunmaz ve kullanılmaz.
-* 🚫 **Genel Uninstaller & Cleaner Değildir:** CCleaner veya şüpheli cleaner/uninstaller yazılımlarının aksine sistem loglarını veya kayıt defterini körlemesine silmez.
-* 🚫 **Makro / Strafe / Key Mapping Bulunmaz:** `Keys2XInput`, `Strafe Macro`, klavye giriş hızını yapay düşüren veya tekrarlayan hiçbir donanım/yazılım emülasyonu içermez.
-* 🚫 **Oyun İçi Avantaj RPF / Mod İçermez:** `No roll`, `No recoil`, `No bush`, `Mini no bush` gibi oyun bütünlüğünü bozan hiçbir RPF dosyası veya bellek enjeksiyonu barındırmaz.
-* 🚫 **Yasaklı AI / Bot Kodları İçermez:** Uygulamadaki yapay zeka modülü sadece OBS bitrate ve yayın ayarlarını hesaplamak içindir; oyun süreçlerine müdahale etmez.
-* ✅ **Gönül Rahatlığıyla Kullanım:** Sunucu yetkilileri veya kontrol ekibi bilgisayarınızı incelediğinde 3. Parti Kapsamında Değerlendirilen hiçbir kuralı ihlal etmez.
-
----
-
-## 🎥 OBS Stüdyo & Yapay Zeka Merkezi
-
-Uygulamanın en güçlü yanlarından biri, canlı yayıncılar için sunduğu özel OBS Stüdyo araç takımıdır:
-
-1. **Canlı İnternet Hız Testi (Cloudflare CDN):**
-   * Canlı Ping (ms), Download (Mbps) ve yayın için en kritik olan Upload (Mbps) testi.
-   * Canlı ilerleme çubuğu, donmayan asenkron arka plan mimarisi.
-2. **Otomatik Donanım Tespiti:**
-   * İşlemci, ekran kartı mimarisi, RAM ve monitör yenileme hızını (Hz) otomatik tarar.
-3. **Yapay Zeka Destekli Otomatik OBS Profil Oluşturucu:**
-   * Twitch, Kick, YouTube veya Özel RTMP seçimi.
-   * Gemini API anahtarı desteği (isteğe bağlı).
-   * **Önemli:** API anahtarı olmasa dahi dahili **Deep Gaming AI Rule-Engine** devreye girer; upload hızınıza ve GPU mimarinize en uygun bitrate (örn. 8000 kbps), NVENC P6/P5, Tuning HQ ve çözünürlük ayarlarını hesaplar.
-   * Profili doğrudan `%APPDATA%\obs-studio\basic\profiles\<ProfilAdı>\` klasörüne yazar; OBS'i açtığınızda profil seçilmeye hazırdır.
-4. **Manuel OBS Profil Oluşturucu:**
-   * Kodlayıcı, Bitrate, Preset (P1-P7), Tuning, Multipass, Çıkış Çözünürlüğü ve FPS değerlerini elle seçip tek tıkla OBS profili olarak kaydetme imkanı.
-5. **5'li Profesyonel Yayıncı Sahne Koleksiyonu:**
-   * Tek tıkla 5 sahneyi (`🎮 1 - Oyun & FiveM`, `💬 2 - Sohbet`, `⏳ 3 - Yayın Başlıyor`, `☕ 4 - Mola`, `👋 5 - Yayın Bitti`) OBS'e ekler.
-   * **ReShade Güvenliği:** Oyun sahnesindeki Oyun Yakalama (Game Capture) kaynağında `capture_overlays = false` yapılmıştır; böylece ReShade ve QuantV ile OBS DXGI kancası asla çakışmaz ve oyun çökmez!
+> [!CAUTION]
+> **🌡️ Sıcaklık ve Güç Tüketimi Uyarısı:**
+> Bu bölümdeki ayarlar donanımın güç tasarrufu durumlarını kısıtladığı için **artan çalışma sıcaklıklarına** ve **daha yüksek güç tüketimine** yol açar. Yetersiz soğutmalı kasalarda veya dizüstü (laptop) bilgisayarlarda donanım sıcaklıklarının takip edilmesi önemle önerilir.
 
 ---
 
-## 🛡️ Güvenlik & VirusTotal Taraması
+### 2. 🛠️ Windows Hizmet (Service) Optimizasyonları Yeniden Eklendi
+Topluluk talepleri doğrultusunda Windows'un arka planda boş yere RAM ve işlemci tüketen gereksiz servisleri modüler olarak yönetilebilir hale getirildi:
+* **DiagTrack & dmwappushservice:** Telemetri ve arka plan tanılama veri toplayıcıları kapatılır.
+* **Windows Search (WSearch):** Sürekli disk indeksleme döngüsünü durdurur, SSD ömrünü ve oyun içi anlık okuma tepkisini korur.
+* **Print Spooler:** Yazıcı kullanmayan sistemlerde fazladan bellek ve port kullanımını sonlandırır.
+* **Fax, RemoteRegistry ve WerSvc:** Eski ve gereksiz arka plan servislerini durdurur.
 
-Uygulama açık kaynak kodludur, hiçbir harici reklam veya zararlı kod içermez. Windows Defender ve güvenlik yazılımlarıyla tam uyumludur.
+> [!WARNING]
+> **⚠️ FiveM & Katı Anti-Cheat (PC Check) Uyarı Bildirimi:**
+> Rekabetçi FiveM ve espor sunucularındaki manuel yetkili kontrollerinde (PC Check), *"Windows hizmetlerinin devre dışı bırakılması / Tweak"* kural ihlali olarak değerlendirilebilmektedir.
+> * Eğer FiveM yetkili kontrolü olan sunucularda oynuyorsanız bu sekmedeki hizmetleri varsayılanda (Açık) bırakmanız veya **"🚀 Önerilenleri Uygula (Safe)"** profilinde kalmanız önemle tavsiye edilir!
+> * Genel oyunlar (CS2, Valorant, Apex vb.) için hizmet optimizasyonları tamamen güvenlidir.
+
+---
+
+### 3. 🧹 Standby & Çalışma Kümesi RAM Temizleyici (0 ms)
+* Bellek & Disk sekmesine eklenen yerel araç sayesinde, üçüncü parti yazılımlara ihtiyaç duymadan Windows'un önbellekte unuttuğu Standby belleği tek tıkla boşaltabilir ve anında fiziksel RAM alanı açabilirsiniz.
+
+---
+
+### 4. ⚡ Konsolsuz, Sıfır Gecikmeli Saf Win32 Mimarisi
+* Uygulamanın tüm donanım tespiti ve süreç denetimleri saf **Win32 API (Kayıt Defteri & Ctypes)** mimarisine geçirilmiştir.
+* Başlangıçta veya arka plan taramalarında **hiçbir PowerShell veya CMD siyah penceresi açılmaz / yanıp sönmez**.
+
+---
+
+## 🎯 Diğer Sistem Optimizasyonları
+
+* **Güç & İşlemci:** Nihai Performans Planı, Ryzen Frekans ve Soğutma Modu, Aktif Soğutma Politikası, USB Selective Suspend Kapatma, PCIe ASPM Kapatma.
+* **Grafik & Görüntü:** HAGS (Donanım Hızlandırmalı GPU Zamanlaması), Pencereli Oyun İyileştirmeleri (SwapEffectUpgrade), VRR Global, GameDVR İptali, Windows Oyun Modu.
+* **Bellek & Disk:** 16 GB Bellek Çökme Koruması (`DisablePagingExecutive = 0`), IoPageLockLimit (8 MB), NTFS 8.3 & Son Erişim Kapatma, Hibernation Kapatma (16-32 GB disk tasarrufu).
+* **Ağ & Düşük Gecikme:** Nagle Algoritması Kapatma (`TCPNoDelay` & `TcpAckFrequency`), Multimedya Ağ Kısıtlaması Kaldırma (`NetworkThrottlingIndex`), MMCSS Ses & Oyun Öncelikleri, TCP CUBIC.
+* **FiveM Özel:** Bellek Havuzu Artırımı (CitizenFX.ini `TxdStore 32000`), GTA V `commandline.txt`, Windows Defender Oyun & Yayın Dışlamaları.
+* **OBS Studio Merkezi:** Cloudflare CDN canlı hız testi (Ping, Jitter, Download, Upload), Yapay Zeka destekli OBS profil üreticisi, 5'li hazır yayıncı sahne paketi.
+
+---
+
+## 🔐 Güvenlik & Dosya Doğrulama
+
+Uygulama açık kaynak kodludur, hiçbir reklam veya zararlı yazılım içermez.
 
 * **Dosya Adı:** `Ripleytia ST Opti V2.exe`
-* **SHA-256 Dijital Parmak İzi:**
+* **SHA-256 Özeti:**
   ```text
-  012d6dc2cc97c21011ca6f940857859a6d3c582307904ae709b629e108978fe8
+  c9ef0a187a0287321aaaffc0127ab0ccce06796f6029475e25f9514d06e8320d
   ```
-* **VirusTotal Raporu:** [VirusTotal Doğrulama Bağlantısı](https://www.virustotal.com/gui/file/012d6dc2cc97c21011ca6f940857859a6d3c582307904ae709b629e108978fe8)
+* **Windows Defender Taraması:** `MpCmdRun.exe` ile taranmış ve **0 Tehdit (Clean - Found no threats)** olarak onaylanmıştır.
+* **VirusTotal Raporu:** [VirusTotal Doğrulama Bağlantısı](https://www.virustotal.com/gui/file/c9ef0a187a0287321aaaffc0127ab0ccce06796f6029475e25f9514d06e8320d)
 
 ---
 
@@ -117,7 +100,7 @@ Uygulama açık kaynak kodludur, hiçbir harici reklam veya zararlı kod içerme
 ### Yöntem 1: Hazır `.exe` İle Çalıştırma (Önerilen)
 1. [Releases](../../releases) bölümünden **`Ripleytia ST Opti V2.exe`** veya **`Ripleytia ST Opti V2.zip`** dosyasını indirin.
 2. Dosyaya çift tıklayarak çalıştırın (Uygulama otomatik olarak Yönetici UAC yetkisi isteyecektir).
-3. İstediğiniz ayarları tek tek veya üstteki **"🚀 Tüm Önerilenleri Uygula"** butonuyla saniyeler içinde uygulayın.
+3. Üstteki **"🚀 Önerilenleri Uygula (Safe)"** veya **"🔥 Ekstrem Overdrive"** butonuyla dilediğiniz profili saniyeler içinde uygulayın.
 
 ### Yöntem 2: Kaynak Koddan Çalıştırma
 ```powershell
@@ -149,21 +132,15 @@ Ripleytia_ST_Opti_V2/
 │   ├── logo_64.png         # Pencere başlık çubuğu için 64x64 logo
 │   └── bg_dark.png         # Düşük opaklıklı gothic mor arka plan
 ├── engine/
-│   ├── hardware.py         # CIMInstance donanım tarama motoru
+│   ├── hardware.py         # Saf Win32 (Ctypes + Registry) donanım motoru (0 ms)
 │   ├── speedtest.py        # Cloudflare CDN canlı hız testi motoru
 │   ├── obs_engine.py       # OBS profil ve sahne koleksiyonu üreticisi
-│   └── tweaks.py           # Windows Registry, BCD ve Güç ayar motoru
-├── main.py                 # CustomTkinter modern grafik arayüzü
-├── build_exe.py            # PyInstaller derleme betiği
-├── process_assets.py       # Varlık ve ikon işleme betiği
+│   └── tweaks.py           # Overdrive, Hizmetler, Güç ve Ağ ayar motoru
+├── main.py                 # CustomTkinter modern grafik arayüzü (v2.1)
+├── build_exe.py            # PyInstaller derleme ve ZIP paketleme betiği
+├── version_info.txt        # Windows PE binary sürüm bilgisi (v2.1.0)
 └── README.md               # Detaylı dokümantasyon
 ```
-
----
-
-## ⚠️ Sorumluluk Reddi (Disclaimer)
-
-Bu uygulama sistem dosyalarını silmez veya bozmaz. Yalnızca Windows'un resmi API'lerini, Kayıt Defteri (Registry) anahtarlarını ve `powercfg` parametrelerini kullanır. Olası her duruma karşı uygulama içerisindeki **"💾 Geri Yükleme Noktası"** butonunu kullanarak sisteme müdahale etmeden önce geri yükleme noktası almanız önerilir.
 
 ---
 
@@ -171,4 +148,4 @@ Bu uygulama sistem dosyalarını silmez veya bozmaz. Yalnızca Windows'un resmi 
 
 * **Geliştirici:** Ripleytia
 * **Lisans:** [MIT License](LICENSE)
-* **Destek & Geri Bildirim:** Her türlü öneri, hata bildirimi veya katkı için lütfen bir [Issue](../../issues) veya [Pull Request](../../pulls) açmaktan çekinmeyin!
+* **Destek & Geri Bildirim:** Her türlü öneri, hata bildirimi veya katkı için lütfen bir [Issue](../../issues) açmaktan çekinmeyin!

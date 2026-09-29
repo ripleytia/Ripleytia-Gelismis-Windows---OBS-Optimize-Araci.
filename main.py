@@ -30,9 +30,11 @@ from engine.obs_engine import (
 from engine.tweaks import (
     TWEAKS,
     ALL_RECOMMENDED,
+    ALL_EXTREME,
     is_admin,
     create_restore_point,
-    restart_explorer
+    restart_explorer,
+    clear_standby_memory
 )
 
 ctk.set_appearance_mode("dark")
@@ -42,7 +44,7 @@ class RipleytiaApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Ripleytia — Gelişmiş Yayıncı & Oyuncu Sistemi")
+        self.title("Ripleytia — Gelişmiş Yayıncı & Oyuncu Sistemi (v2.1)")
         self.geometry("1120x800")
         self.minsize(1000, 700)
         self.configure(fg_color="#0b0612")
@@ -137,7 +139,7 @@ class RipleytiaApp(ctk.CTk):
 
         lbl_title = ctk.CTkLabel(
             text_sub_box,
-            text="RIPLEYTIA GELİŞMİŞ WINDOWS TWEAK & YAYINCI EKOSİSTEM ARACI",
+            text="RIPLEYTIA GELİŞMİŞ WINDOWS TWEAK & YAYINCI EKOSİSTEM ARACI (v2.1)",
             font=ctk.CTkFont(family="Segoe UI", size=16, weight="bold"),
             text_color="#e0aaff"
         )
@@ -186,7 +188,7 @@ class RipleytiaApp(ctk.CTk):
 
         btn_all = ctk.CTkButton(
             actions_box,
-            text="🚀 Tüm Önerilenleri Uygula",
+            text="🚀 Önerilenleri Uygula (Safe)",
             fg_color="#7b2cbf",
             hover_color="#9d4edd",
             text_color="#ffffff",
@@ -197,6 +199,20 @@ class RipleytiaApp(ctk.CTk):
             command=self._apply_all_recommended
         )
         btn_all.pack(side="left", padx=4)
+
+        btn_extreme = ctk.CTkButton(
+            actions_box,
+            text="🔥 Ekstrem Overdrive",
+            fg_color="#3b1419",
+            hover_color="#5c1d25",
+            text_color="#ff5252",
+            border_width=1,
+            border_color="#b71c1c",
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            command=self._apply_extreme_overdrive
+        )
+        btn_extreme.pack(side="left", padx=4)
 
         btn_restore = ctk.CTkButton(
             actions_box,
@@ -246,8 +262,10 @@ class RipleytiaApp(ctk.CTk):
         )
         self.tabview.grid(row=1, column=0, sticky="nsew", padx=14, pady=4)
 
-        # Sekme İsimleri (Hepsi Türkçe - Anti-Cheat Uyumlu)
+        # Sekme İsimleri
         self.tab_dash = self.tabview.add("📊 Gösterge Paneli")
+        self.tab_boost = self.tabview.add("🔥 Performans Artışı")
+        self.tab_services = self.tabview.add("🛠️ Hizmetler")
         self.tab_power = self.tabview.add("⚡ Güç & İşlemci")
         self.tab_gpu = self.tabview.add("🎮 Grafik & Ekran")
         self.tab_mem = self.tabview.add("🧠 Bellek & Disk")
@@ -257,6 +275,8 @@ class RipleytiaApp(ctk.CTk):
 
         # Sekmeleri Doldur
         self._build_dashboard_tab()
+        self._build_tweak_tab(self.tab_boost, "perf_boost")
+        self._build_tweak_tab(self.tab_services, "services")
         self._build_tweak_tab(self.tab_power, "power")
         self._build_tweak_tab(self.tab_gpu, "gpu")
         self._build_tweak_tab(self.tab_mem, "memory")
@@ -361,6 +381,73 @@ class RipleytiaApp(ctk.CTk):
         scroll = ctk.CTkScrollableFrame(tab, fg_color="transparent")
         scroll.pack(fill="both", expand=True, padx=6, pady=6)
 
+        # 1. Özel Grup Bannerları
+        if group_key == "perf_boost":
+            banner = ctk.CTkFrame(scroll, fg_color="#311317", corner_radius=10, border_width=1, border_color="#ff5252")
+            banner.pack(fill="x", pady=(4, 10), padx=4)
+            ctk.CTkLabel(
+                banner,
+                text="🔥 DİKKAT: YÜKSEK GÜÇ TÜKETİMİ & ARTAN ISI UYARISI (PERFORMANCE OVERDRIVE)",
+                font=ctk.CTkFont(size=13, weight="bold"),
+                text_color="#ff5252"
+            ).pack(anchor="w", padx=16, pady=(10, 2))
+            ctk.CTkLabel(
+                banner,
+                text="Bu bölümdeki ayarlar; CPU çekirdek uyku modlarını (Core Parking) kapatır, frekansı tepe noktada kilitler ve mikro-zamanlayıcı gecikmesini sıfırlar. Bu durum oyun içi minimum %1 Low FPS değerlerini ve tepkiselliği tavan yaptırırken, sistemin daha fazla güç tüketmesine ve çalışma sıcaklıklarının artmasına neden olur. Laptop kullanıcılarının ve standart hava soğutmalı sistemlerin donanım sıcaklıklarını takip etmesi önemle önerilir!",
+                font=ctk.CTkFont(size=11),
+                text_color="#ffcdd2",
+                wraplength=950,
+                justify="left"
+            ).pack(anchor="w", padx=16, pady=(0, 10))
+
+        elif group_key == "services":
+            banner = ctk.CTkFrame(scroll, fg_color="#332204", corner_radius=10, border_width=1, border_color="#ffb300")
+            banner.pack(fill="x", pady=(4, 10), padx=4)
+            ctk.CTkLabel(
+                banner,
+                text="⚠️ FIVEM & REKABETÇİ ESPOR UYARISI (MANUEL PC-CHECK DİKKAT)",
+                font=ctk.CTkFont(size=13, weight="bold"),
+                text_color="#ffb300"
+            ).pack(anchor="w", padx=16, pady=(10, 2))
+            ctk.CTkLabel(
+                banner,
+                text="FiveM sunucularındaki manuel yetkili kontrollerinde (PC Check) veya katı kuralı olan espor sunucularında 'Windows Hizmetlerinin Devre Dışı Bırakılması' şüpheli bulunabilir ve sunucu kuralları gereği yasaklanma (ban) riski oluşturabilir. Eğer FiveM yetkili kontrolü olan sunucularda oynuyorsanız bu hizmetleri varsayılanda (Açık) bırakmanız veya 'Anti-Cheat Safe' profilinde kalmanız önemle tavsiye edilir!",
+                font=ctk.CTkFont(size=11),
+                text_color="#ffe082",
+                wraplength=950,
+                justify="left"
+            ).pack(anchor="w", padx=16, pady=(0, 10))
+
+        elif group_key == "memory":
+            mem_bar = ctk.CTkFrame(scroll, fg_color="#180f27", corner_radius=10, border_width=1, border_color="#54288a")
+            mem_bar.pack(fill="x", pady=(4, 8), padx=4)
+            ctk.CTkLabel(
+                mem_bar,
+                text="🧹 Standby & Çalışma Kümesi Bellek Temizleyici (0 ms):",
+                font=ctk.CTkFont(size=12, weight="bold"),
+                text_color="#d8b4fe"
+            ).pack(side="left", padx=14, pady=10)
+
+            def do_clear_mem():
+                ok, msg = clear_standby_memory()
+                if ok:
+                    self.log("RAM: " + msg)
+                    messagebox.showinfo("Bellek Temizlendi", msg)
+                else:
+                    self.log("RAM HATA: " + msg)
+                    messagebox.showerror("Hata", msg)
+
+            ctk.CTkButton(
+                mem_bar,
+                text="⚡ Bellek Önbelleğini Boşalt",
+                fg_color="#7b2cbf",
+                hover_color="#9d4edd",
+                text_color="#ffffff",
+                corner_radius=8,
+                font=ctk.CTkFont(size=11, weight="bold"),
+                command=do_clear_mem
+            ).pack(side="right", padx=14, pady=10)
+
         items = TWEAKS.get(group_key, [])
         for item in items:
             card = ctk.CTkFrame(
@@ -408,6 +495,18 @@ class RipleytiaApp(ctk.CTk):
                 wraplength=950
             )
             lbl_desc.pack(anchor="w", padx=16, pady=2)
+
+            # Uyarı Satırı (Varsa)
+            if "warning" in item:
+                lbl_warn = ctk.CTkLabel(
+                    card,
+                    text=item["warning"],
+                    font=ctk.CTkFont(size=11, weight="bold"),
+                    text_color="#ffab40",
+                    justify="left",
+                    wraplength=950
+                )
+                lbl_warn.pack(anchor="w", padx=16, pady=(1, 3))
 
             # Avantaj Satırı (Sağladığı Avantaj)
             lbl_adv = ctk.CTkLabel(
@@ -948,11 +1047,11 @@ class RipleytiaApp(ctk.CTk):
             messagebox.showerror("Hata", f"Sahne koleksiyonu oluşturulamadı: {e}")
 
     def _apply_all_recommended(self):
-        if not messagebox.askyesno("Onay", "Tüm önerilen yayıncı ve oyuncu optimizasyonları tek tıkla uygulanacak. Onaylıyor musunuz?"):
+        if not messagebox.askyesno("Onay", "Tüm önerilen güvenli yayıncı ve oyuncu optimizasyonları (Anti-Cheat Safe) tek tıkla uygulanacak. Onaylıyor musunuz?"):
             return
 
         def worker():
-            self.log("=== TOPLU OPTİMİZASYON BAŞLATILDI ===")
+            self.log("=== GÜVENLİ TOPLU OPTİMİZASYON BAŞLATILDI ===")
             success_count = 0
             for item in ALL_RECOMMENDED:
                 try:
@@ -962,7 +1061,33 @@ class RipleytiaApp(ctk.CTk):
                 except Exception as e:
                     self.log(f"Atlandı ({item['title']}): {e}")
             self.log(f"=== TAMAMLANDI: {success_count}/{len(ALL_RECOMMENDED)} ayar başarıyla uygulandı ===")
-            messagebox.showinfo("Tamamlandı", f"{success_count} adet optimizasyon başarıyla uygulandı!\nDeğişikliklerin tam aktif olması için bilgisayarınızı 1 kez yeniden başlatmanız önerilir.")
+            messagebox.showinfo("Tamamlandı", f"{success_count} adet güvenli optimizasyon başarıyla uygulandı!\nDeğişikliklerin tam aktif olması için bilgisayarınızı 1 kez yeniden başlatmanız önerilir.")
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _apply_extreme_overdrive(self):
+        msg = (
+            "🔥 DİKKAT: EKSTREM PERFORMANS ARTIŞI (OVERDRIVE)\n\n"
+            "Bu işlem; tüm CPU çekirdek uyku modlarını (Core Parking) kapatır, frekansı tepe saat hızında kilitler, "
+            "dinamik zamanlayıcıyı sabitler ve tüm oyun önceliklerini zirveye taşır.\n\n"
+            "⚠️ Yüksek güç tüketimi ve çalışma sıcaklıklarının artmasına neden olur.\n"
+            "Yeterli soğutma altyapısına sahip olduğunuzu onaylıyor musunuz?"
+        )
+        if not messagebox.askyesno("Ekstrem Performans Onayı", msg, icon="warning"):
+            return
+
+        def worker():
+            self.log("=== EKSTREM PERFORMANS (OVERDRIVE) BAŞLATILDI ===")
+            success_count = 0
+            for item in ALL_EXTREME:
+                try:
+                    self.log(f"Uygulanıyor: {item['title']}...")
+                    item["apply"]()
+                    success_count += 1
+                except Exception as e:
+                    self.log(f"Atlandı ({item['title']}): {e}")
+            self.log(f"=== TAMAMLANDI: {success_count}/{len(ALL_EXTREME)} ekstrem ayar başarıyla uygulandı ===")
+            messagebox.showinfo("Overdrive Aktif", f"{success_count} adet ayar uygulandı!\nMaksimum etki için bilgisayarınızı 1 kez yeniden başlatmanız önerilir.")
 
         threading.Thread(target=worker, daemon=True).start()
 

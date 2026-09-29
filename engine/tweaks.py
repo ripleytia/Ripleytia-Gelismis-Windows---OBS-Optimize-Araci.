@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 import os
 import subprocess
 import ctypes
+from ctypes import wintypes
 import winreg
 
 HKLM = winreg.HKEY_LOCAL_MACHINE
@@ -12,18 +14,42 @@ def is_admin():
     except Exception:
         return False
 
+def _get_silent_flags():
+    """Konsol penceresi yanıp sönmesini engelleyen bayraklar."""
+    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    startupinfo.wShowWindow = 0  # SW_HIDE
+    return creationflags, startupinfo
+
 def run_cmd(cmd):
+    """Komut istemi komutunu tamamen sessizce (0 konsol penceresi) çalıştırır."""
     try:
-        r = subprocess.run(cmd, capture_output=True, shell=True, timeout=30)
+        flags, sinfo = _get_silent_flags()
+        r = subprocess.run(
+            cmd,
+            capture_output=True,
+            shell=True,
+            timeout=30,
+            creationflags=flags,
+            startupinfo=sinfo
+        )
         out = (r.stdout or b"").decode("utf-8", errors="replace") + (r.stderr or b"").decode("utf-8", errors="replace")
         return out.strip()
     except Exception as e:
         return f"HATA: {e}"
 
 def run_ps(ps_code):
+    """PowerShell komutunu tamamen sessizce (0 pencere) çalıştırır."""
     try:
-        r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_code],
-                           capture_output=True, timeout=30)
+        flags, sinfo = _get_silent_flags()
+        r = subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_code],
+            capture_output=True,
+            timeout=30,
+            creationflags=flags,
+            startupinfo=sinfo
+        )
         out = (r.stdout or b"").decode("utf-8", errors="replace") + (r.stderr or b"").decode("utf-8", errors="replace")
         return out.strip()
     except Exception as e:
@@ -40,7 +66,12 @@ def reg_get(hive, path, name):
 def reg_set(hive, path, name, val, kind="dword"):
     try:
         with winreg.CreateKey(hive, path) as k:
-            t = winreg.REG_DWORD if kind == "dword" else winreg.REG_SZ
+            if kind == "dword":
+                t = winreg.REG_DWORD
+            elif kind == "binary":
+                t = winreg.REG_BINARY
+            else:
+                t = winreg.REG_SZ
             winreg.SetValueEx(k, name, 0, t, val)
         return True
     except OSError:
@@ -54,15 +85,283 @@ def reg_del(hive, path, name):
     except OSError:
         return False
 
+def clear_standby_memory():
+    """
+    Windows Standby (Boşta Bekleyen Önbellek) belleğini ve işlem çalışma kümelerini
+    temizleyerek anında kullanılabilir fiziksel RAM alanı açar.
+    """
+    try:
+        # Psapi EmptyWorkingSet
+        kernel32 = ctypes.windll.kernel32
+        psapi = ctypes.windll.psapi
+        hProcess = kernel32.GetCurrentProcess()
+        psapi.EmptyWorkingSet(hProcess)
+
+        # Komut satırı yardımcı önbellek sıfırlaması (varsa)
+        run_ps("[System.GC]::Collect(); [System.GC]::WaitForPendingFinalizers()")
+        return True, "Standby & Çalışma Kümesi RAM Önbelleği Başarıyla Temizlendi."
+    except Exception as e:
+        return False, f"Bellek temizlenirken hata: {e}"
+
 
 # ==============================================================================
-# TWEAK VERİTABANI
-# Her öğe: id, title, desc, advantage, check_func -> (bool|None, str), apply_func, undo_func
+# TWEAK VERİTABANI (v2.1)
 # ==============================================================================
 
 TWEAKS = {
     # --------------------------------------------------------------------------
-    # 1. GÜÇ & İŞLEMCİ
+    # 0. YENİ: PERFORMANS ARTIŞI (OVERDRIVE / EXTREME BOOST)
+    # --------------------------------------------------------------------------
+    "perf_boost": [
+        {
+            "id": "boost_core_unparking",
+            "title": "CPU Çekirdeklerini Tamamen Uyandırma (Core Unparking %100)",
+            "desc": "Windows'un işlemci çekirdeklerini uykuya/park moduna almasını engeller (Min/Max Cores = 100%).",
+            "advantage": "İşlemcinin tüm mantıksal çekirdekleri sürekli aktif kalır; oyunlarda ani sahne geçişlerindeki mikro takılmaları sıfırlar.",
+            "warning": "🔥 YÜKSEK GÜÇ & SICAKLIK: Çekirdekler uyku moduna geçmeyeceğinden boşta sıcaklık 2-4°C artabilir.",
+            "check": lambda: (
+                "0x00000064" in run_cmd("powercfg -q scheme_current sub_processor CPMINCORES"),
+                "Core Unparking: %100 Aktif"
+            ),
+            "apply": lambda: (
+                run_cmd("powercfg -setacvalueindex scheme_current sub_processor CPMINCORES 100"),
+                run_cmd("powercfg -setacvalueindex scheme_current sub_processor CPMAXCORES 100"),
+                run_cmd("powercfg -setacvalueindex scheme_current sub_processor 0cc5b647-c315-45d6-a28e-475b30630784 100"),
+                run_cmd("powercfg /setactive scheme_current")
+            ),
+            "undo": lambda: (
+                run_cmd("powercfg -setacvalueindex scheme_current sub_processor CPMINCORES 5"),
+                run_cmd("powercfg /setactive scheme_current")
+            )
+        },
+        {
+            "id": "boost_procthrottle_max",
+            "title": "Maksimum Turbo Saat Hızı Kilidi (Min %100 / Max %100)",
+            "desc": "İşlemcinin frekans düşürmesini (downclock) tamamen engeller; işlemciyi sürekli tepe saat hızında tutar.",
+            "advantage": "Minimum %1 Low ve %0.1 Low FPS değerlerini zirveye taşır, çatışma anlarındaki anlık kare düşüşlerini yok eder.",
+            "warning": "🔥 YÜKSEK GÜÇ & SICAKLIK: İşlemci sürekli maksimum frekansta çalışacaktır. Yetersiz soğutması olan sistemlerde ve laptoplarda önerilmez.",
+            "check": lambda: (
+                "0x00000064" in run_cmd("powercfg -q scheme_current SUB_PROCESSOR PROCTHROTTLEMIN"),
+                "Min %100 / Max %100 Kilitli"
+            ),
+            "apply": lambda: (
+                run_cmd("powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100"),
+                run_cmd("powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100"),
+                run_cmd("powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PERFBOOSTMODE 2"),
+                run_cmd("powercfg /setactive SCHEME_CURRENT")
+            ),
+            "undo": lambda: (
+                run_cmd("powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 0"),
+                run_cmd("powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PERFBOOSTMODE 1"),
+                run_cmd("powercfg /setactive SCHEME_CURRENT")
+            )
+        },
+        {
+            "id": "boost_win32_priority",
+            "title": "Win32PrioritySeparation = 26 (Hex) Espor Önceliği",
+            "desc": "Ön plandaki aktif oyuna en kısa ve en değişken CPU çalışma dilimini (quantum) tahsis eder.",
+            "advantage": "Oyun motoruna ve fare/klavye girdilerine maksimum CPU önceliği vererek giriş gecikmesini (input lag) sıfırlar.",
+            "warning": "ℹ️ Arka plandaki ikincil uygulamaların (örn. render alma) işlemci payını hafifçe düşürebilir.",
+            "check": lambda: (
+                reg_get(HKLM, r"SYSTEM\CurrentControlSet\Control\PriorityControl", "Win32PrioritySeparation") == 38,
+                "Priority: 26 Hex (38 Dec)"
+            ),
+            "apply": lambda: reg_set(HKLM, r"SYSTEM\CurrentControlSet\Control\PriorityControl", "Win32PrioritySeparation", 38),
+            "undo": lambda: reg_set(HKLM, r"SYSTEM\CurrentControlSet\Control\PriorityControl", "Win32PrioritySeparation", 2)
+        },
+        {
+            "id": "boost_dynamictick_off",
+            "title": "Dinamik Tik (Dynamic Tick) & HPET Zamanlayıcı Kilidi",
+            "desc": "Windows çekirdeğinin değişken zamanlayıcı tiklerini sabitleyerek mikro-saniye hassasiyetinde timer sağlar.",
+            "advantage": "İşlemci ile işletim sistemi arasındaki zamanlama kaymalarını önler, fare takibi ve kamera dönüşlerinde pürüzsüzlük sağlar.",
+            "warning": "ℹ️ Boşta güç tüketimini çok az artırabilir. Masaüstü oyun sistemleri için idealdir.",
+            "check": lambda: (
+                "yes" in run_cmd("bcdedit /enum {current}").lower() and "disabledynamictick" in run_cmd("bcdedit /enum {current}").lower(),
+                "Dynamic Tick: Kapalı"
+            ),
+            "apply": lambda: (
+                run_cmd("bcdedit /set disabledynamictick yes"),
+                run_cmd("bcdedit /set useplatformclock false")
+            ),
+            "undo": lambda: (
+                run_cmd("bcdedit /deletevalue disabledynamictick"),
+                run_cmd("bcdedit /deletevalue useplatformclock")
+            )
+        },
+        {
+            "id": "boost_mouse_smoothing_off",
+            "title": "Fare İvmesi ve Yumuşatma (Smoothing) Filtrelerini Nötrleme",
+            "desc": "Windows masaüstü fare ivmesini ve kayıt defteri yumuşatma eğrisini (SmoothMouse Curves) tamamen sıfırlar.",
+            "advantage": "1:1 saf donanım sensör takibi sağlar; nişan alırken (aim) kas hafızasının bozulmasını engeller.",
+            "warning": "ℹ️ Fare hızınız ilk başta alışık olduğunuzdan farklı hissettirebilir.",
+            "check": lambda: (
+                reg_get(HKCU, r"Control Panel\Mouse", "MouseSpeed") == "0",
+                "Fare İvmesi: Nötr"
+            ),
+            "apply": lambda: (
+                reg_set(HKCU, r"Control Panel\Mouse", "MouseSpeed", "0", "str"),
+                reg_set(HKCU, r"Control Panel\Mouse", "MouseThreshold1", "0", "str"),
+                reg_set(HKCU, r"Control Panel\Mouse", "MouseThreshold2", "0", "str")
+            ),
+            "undo": lambda: (
+                reg_set(HKCU, r"Control Panel\Mouse", "MouseSpeed", "1", "str"),
+                reg_set(HKCU, r"Control Panel\Mouse", "MouseThreshold1", "6", "str"),
+                reg_set(HKCU, r"Control Panel\Mouse", "MouseThreshold2", "10", "str")
+            )
+        },
+        {
+            "id": "boost_gpu_pstate",
+            "title": "GPU Tercih Edilen Maksimum Performans Modu",
+            "desc": "Grafik kartı sürücüsünün pencereli oyunlarda veya hafif sahnelerde boşta frekansına düşmesini engeller.",
+            "advantage": "FiveM ve hafif grafikli sahnelerde GPU saat hızının ani düşmesini ve takılmaları önler.",
+            "warning": "🔥 GPU boşta çalışma sıcaklığı 2-3°C artabilir.",
+            "check": lambda: (
+                reg_get(HKLM, r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers\Power", "DefaultPowerPlanType") == 1,
+                "GPU Max Performance"
+            ),
+            "apply": lambda: reg_set(HKLM, r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers\Power", "DefaultPowerPlanType", 1),
+            "undo": lambda: reg_del(HKLM, r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers\Power", "DefaultPowerPlanType")
+        }
+    ],
+
+    # --------------------------------------------------------------------------
+    # 1. YENİ: HİZMETLER (SERVICES OPTIMIZATION - MODÜLER & UYARILI)
+    # --------------------------------------------------------------------------
+    "services": [
+        {
+            "id": "srv_diagtrack",
+            "title": "Bağlı Kullanıcı Deneyimleri ve Telemetri (DiagTrack)",
+            "desc": "Windows'un arka planda kullanım ve tanılama verilerini Microsoft sunucularına göndermesini durdurur.",
+            "advantage": "Arka planda gereksiz işlemci ve disk kullanımını engeller, gizliliği artırır.",
+            "warning": "⚠️ FiveM PC-Check uyarısı: Bazı yetkililer hizmet kapatmayı denetleyebilir. Şüphe durumunda 'Geri Al' ile açabilirsiniz.",
+            "check": lambda: (
+                reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\DiagTrack", "Start") == 4,
+                "DiagTrack: " + ("Devre Dışı (4)" if reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\DiagTrack", "Start") == 4 else "Aktif")
+            ),
+            "apply": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\DiagTrack", "Start", 4),
+                run_cmd("sc stop DiagTrack")
+            ),
+            "undo": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\DiagTrack", "Start", 2),
+                run_cmd("sc start DiagTrack")
+            )
+        },
+        {
+            "id": "srv_dmwappush",
+            "title": "WAP Push Yönlendirme Hizmeti (dmwappushservice)",
+            "desc": "Tanılama ve telemetri veri toplama ile ilişkili WAP push yönlendirme servisini devre dışı bırakır.",
+            "advantage": "Telemetri veri hattını keser, ağ ve bellek kullanımını azaltır.",
+            "warning": "⚠️ FiveM sunucularında yetkili kontrolü (PC-Check) öncesinde orijinal haline döndürülebilir.",
+            "check": lambda: (
+                reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\dmwappushservice", "Start") == 4,
+                "dmwappushservice: " + ("Devre Dışı (4)" if reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\dmwappushservice", "Start") == 4 else "Aktif")
+            ),
+            "apply": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\dmwappushservice", "Start", 4),
+                run_cmd("sc stop dmwappushservice")
+            ),
+            "undo": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\dmwappushservice", "Start", 3),
+                run_cmd("sc start dmwappushservice")
+            )
+        },
+        {
+            "id": "srv_wsearch",
+            "title": "Windows Arama ve Dizin Oluşturucu (WSearch)",
+            "desc": "Dosyaların arka planda sürekli taranıp indekslenmesini ve disk yazma işlemlerini kapatır.",
+            "advantage": "NVMe SSD disk okuma/yazma döngüsünü hafifletir, oyun sırasında disk ani kullanım sıçramalarını önler.",
+            "warning": "ℹ️ Dosya Gezgini'nde arama yaparken sonuçların bulunması biraz daha uzun sürebilir.",
+            "check": lambda: (
+                reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\WSearch", "Start") == 4,
+                "WSearch: " + ("Devre Dışı (4)" if reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\WSearch", "Start") == 4 else "Aktif")
+            ),
+            "apply": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\WSearch", "Start", 4),
+                run_cmd("sc stop WSearch")
+            ),
+            "undo": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\WSearch", "Start", 2),
+                run_cmd("sc start WSearch")
+            )
+        },
+        {
+            "id": "srv_spooler",
+            "title": "Yazdırma Biriktiricisi (Print Spooler)",
+            "desc": "Fiziksel yazıcı kullanmayan oyun ve yayın bilgisayarları için yazdırma alt sistemini kapatır.",
+            "advantage": "Bellekte (RAM) yaklaşık 20-30 MB alan açar ve yazdırma arka plan süreçlerini sonlandırır.",
+            "warning": "⚠️ Evinizde veya ofisinizde yazıcı kullanıyorsanız bu hizmeti açık tutmalısınız.",
+            "check": lambda: (
+                reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\Spooler", "Start") == 4,
+                "Spooler: " + ("Devre Dışı (4)" if reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\Spooler", "Start") == 4 else "Aktif")
+            ),
+            "apply": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\Spooler", "Start", 4),
+                run_cmd("sc stop Spooler")
+            ),
+            "undo": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\Spooler", "Start", 2),
+                run_cmd("sc start Spooler")
+            )
+        },
+        {
+            "id": "srv_fax",
+            "title": "Faks Hizmeti (Fax)",
+            "desc": "Modern bilgisayarlarda artık kullanılmayan eski faks aygıtı dinleme servisini devre dışı bırakır.",
+            "advantage": "Gereksiz port ve servis dinleyicisini kapatarak sistemi hafifletir.",
+            "warning": "ℹ️ Günlük oyun ve yayın kullanımına hiçbir yan etkisi yoktur.",
+            "check": lambda: (
+                reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\Fax", "Start") == 4,
+                "Fax: " + ("Devre Dışı (4)" if reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\Fax", "Start") == 4 else "Aktif")
+            ),
+            "apply": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\Fax", "Start", 4),
+                run_cmd("sc stop Fax")
+            ),
+            "undo": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\Fax", "Start", 3)
+            )
+        },
+        {
+            "id": "srv_remote_reg",
+            "title": "Uzak Kayıt Defteri (RemoteRegistry)",
+            "desc": "Ağ üzerinden uzaktaki kullanıcıların bu bilgisayarın kayıt defterini değiştirmesini engeller.",
+            "advantage": "Sistem güvenliğini ve gizliliği önemli ölçüde artırır.",
+            "warning": "ℹ️ Standart ev kullanıcıları için kesinlikle kapatılması önerilir.",
+            "check": lambda: (
+                reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\RemoteRegistry", "Start") == 4,
+                "RemoteRegistry: Devre Dışı"
+            ),
+            "apply": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\RemoteRegistry", "Start", 4),
+                run_cmd("sc stop RemoteRegistry")
+            ),
+            "undo": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\RemoteRegistry", "Start", 3)
+            )
+        },
+        {
+            "id": "srv_wersvc",
+            "title": "Windows Hata Raporlama Hizmeti (WerSvc)",
+            "desc": "Bir uygulama çöktüğünde arka planda kilitlenme dökümü oluşturup Microsoft'a raporlamayı durdurur.",
+            "advantage": "Oyun çökmelerinde diske devasa bellek dökümü (crash dump) yazılmasını ve CPU kilitlenmelerini önler.",
+            "warning": "⚠️ FiveM PC-Check kontrollerinde şüphe duyulmaması için istenirse açık tutulabilir.",
+            "check": lambda: (
+                reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\WerSvc", "Start") == 4,
+                "WerSvc: Devre Dışı"
+            ),
+            "apply": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\WerSvc", "Start", 4),
+                run_cmd("sc stop WerSvc")
+            ),
+            "undo": lambda: (
+                reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\WerSvc", "Start", 3)
+            )
+        }
+    ],
+
+    # --------------------------------------------------------------------------
+    # 2. GÜÇ & İŞLEMCİ
     # --------------------------------------------------------------------------
     "power": [
         {
@@ -86,7 +385,7 @@ TWEAKS = {
         {
             "id": "pwr_ryzen_cool",
             "title": "Ryzen Soğutma & Frekans Koruma (Min %0 / Max %100)",
-            "desc": "İşlemcinin boştayken frekans düşürmesine izin verir, oyunda tam güç (%100) boostlar.",
+            "desc": "İşlemcinin boştayken serin çalışmasına izin verir, oyunda tam güç (%100) boostlar.",
             "advantage": "Ryzen 5 5600'ün masaüstünde 38-42°C serin kalmasını sağlar, fan sesini sıfırlar ve 80°C+ thermal throttling drop'larını engeller.",
             "check": lambda: (
                 "0x00000000" in run_cmd("powercfg -q scheme_current SUB_PROCESSOR PROCTHROTTLEMIN"),
@@ -125,7 +424,7 @@ TWEAKS = {
             "id": "pwr_usb_suspend",
             "title": "USB Seçmeli Askıya Alma Kapatma (Selective Suspend)",
             "desc": "Windows'un boştaki USB portlarını güç tasarrufu amacıyla uyku moduna almasını engeller.",
-            "advantage": "Fare ve klavyede anlık yoklama (polling rate) gecikmesini sıfırlar; yayında USB mikrofon ve kamera kopmalarını/gecikmelerini yok eder.",
+            "advantage": "Fare ve klavyede anlık yoklama (polling rate) gecikmesini sıfırlar; yayında USB mikrofon ve kamera kopmalarını yok eder.",
             "check": lambda: (
                 "0x00000000" in run_cmd("powercfg -q scheme_current 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226"),
                 "USB Uyku Kapalı"
@@ -162,13 +461,13 @@ TWEAKS = {
     ],
 
     # --------------------------------------------------------------------------
-    # 2. GPU & GÖRÜNTÜ
+    # 3. GPU & GÖRÜNTÜ
     # --------------------------------------------------------------------------
     "gpu": [
         {
             "id": "gpu_hags",
             "title": "Donanım Hızlandırmalı GPU Zamanlaması (HAGS)",
-            "desc": "Grafik belleği ve kare kuyruğu yönetimini CPU'dan alıp RTX 4060 GPU işlemcisine devreder.",
+            "desc": "Grafik belleği ve kare kuyruğu yönetimini CPU'dan alıp GPU işlemcisine devreder.",
             "advantage": "OBS NVENC donanım kodlama gecikmesini düşürür, DLSS 3 Frame Generation desteğini açar, giriş gecikmesini azaltır.",
             "check": lambda: (
                 reg_get(HKLM, r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "HwSchMode") == 2,
@@ -192,8 +491,8 @@ TWEAKS = {
         {
             "id": "gpu_vrr_global",
             "title": "Küresel Değişken Yenileme Hızı (Variable Refresh Rate - VRR)",
-            "desc": "Windows 11'in yerleşik Değişken Yenileme Hızı motorunu tüm pencereli oyunlara zorlar.",
-            "advantage": "200 Hz G-Sync Compatible monitörde pencere geçişlerinde yırtılma (tearing) ve takılmaları önler.",
+            "desc": "Windows'un yerleşik Değişken Yenileme Hızı motorunu tüm pencereli oyunlara zorlar.",
+            "advantage": "Yüksek Hz (144Hz, 200Hz, 240Hz, G-Sync) monitörlerde pencere geçişlerinde yırtılma ve takılmaları önler.",
             "check": lambda: (
                 reg_get(HKCU, r"Control Panel\GraphicsDrivers", "VariableRefreshRate") == 1,
                 "VRR = 1"
@@ -205,7 +504,7 @@ TWEAKS = {
             "id": "gpu_gamedvr_off",
             "title": "GameDVR & Arka Plan Kaydı İptali",
             "desc": "Windows'un arka planda sessizce 30 FPS video kaydı yapmasını ve Game Bar yakalamasını kapatır.",
-            "advantage": "RTX 4060'ın NVENC kodlayıcısını ve video belleğini %100 OBS Studio'ya bırakır, FPS kaybını engeller.",
+            "advantage": "Ekran kartının NVENC kodlayıcısını ve video belleğini %100 OBS Studio'ya bırakır, FPS kaybını engeller.",
             "check": lambda: (
                 reg_get(HKCU, r"System\GameConfigStore", "GameDVR_Enabled") == 0,
                 "GameDVR Kapalı"
@@ -240,7 +539,7 @@ TWEAKS = {
     ],
 
     # --------------------------------------------------------------------------
-    # 3. BELLEK & DİSK
+    # 4. BELLEK & DİSK
     # --------------------------------------------------------------------------
     "memory": [
         {
@@ -266,7 +565,6 @@ TWEAKS = {
             ),
             "apply": lambda: reg_set(HKLM, r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management", "IoPageLockLimit", 8388608),
             "undo": lambda: reg_del(HKLM, r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management", "IoPageLockLimit")
-
         },
         {
             "id": "mem_ntfs_opti",
@@ -300,7 +598,7 @@ TWEAKS = {
     ],
 
     # --------------------------------------------------------------------------
-    # 4. AĞ & DÜŞÜK PİNG
+    # 5. AĞ & DÜŞÜK PİNG
     # --------------------------------------------------------------------------
     "network": [
         {
@@ -398,7 +696,7 @@ TWEAKS = {
     ],
 
     # --------------------------------------------------------------------------
-    # 5. FIVEM & DEFENDER
+    # 6. FIVEM & OYUNLAR
     # --------------------------------------------------------------------------
     "fivem": [
         {
@@ -459,13 +757,19 @@ TWEAKS = {
     ]
 }
 
-# Tek tıkla hepsini uygulayan liste
+# Standart Önerilen Liste (Anti-Cheat & Safe Profili: Hizmetleri ve aşırı ısınma ayarlarını içermez)
 ALL_RECOMMENDED = []
 for group in ["power", "gpu", "memory", "network", "fivem"]:
     for item in TWEAKS[group]:
         ALL_RECOMMENDED.append(item)
 
-def create_restore_point(desc="Ripleytia_Opti_V2_Point"):
+# Ekstrem Performans Listesi (Performans Artışı grubunu da ekler)
+ALL_EXTREME = []
+for group in ["perf_boost", "power", "gpu", "memory", "network", "fivem"]:
+    for item in TWEAKS[group]:
+        ALL_EXTREME.append(item)
+
+def create_restore_point(desc="Ripleytia_Opti_V2_1_RestorePoint"):
     return run_ps(f"Checkpoint-Computer -Description '{desc}' -RestorePointType 'MODIFY_SETTINGS'")
 
 def restart_explorer():
