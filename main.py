@@ -696,7 +696,17 @@ class RipleytiaApp(ctk.CTk):
             font=ctk.CTkFont(size=14, weight="bold"),
             state="disabled", command=self._verify_ai_tweaks
         )
-        self.btn_verify_ai.pack(side="left")
+        
+        self.btn_verify_ai.pack(side="left", padx=(0, 10))
+        
+        self.btn_force_apply = ctk.CTkButton(
+            btn_frame, text="⚠️ Uygulanmayanları Zorla", 
+            fg_color="#9f1239", hover_color="#881337", 
+            font=ctk.CTkFont(size=14, weight="bold"),
+            state="disabled", command=self._force_apply_failed_tweaks
+        )
+        self.btn_force_apply.pack(side="left")
+
 
         
         self.ai_suggested_tweaks = []
@@ -812,6 +822,7 @@ class RipleytiaApp(ctk.CTk):
                 
                 self.btn_apply_ai.configure(state="normal")
                 self.btn_verify_ai.configure(state="normal")
+                self.btn_force_apply.configure(state="normal")
                 
             except Exception as e:
                 self.ai_result_box.configure(state="normal")
@@ -865,6 +876,49 @@ class RipleytiaApp(ctk.CTk):
             
         import threading
         threading.Thread(target=worker, daemon=True).start()
+
+    
+    def _force_apply_failed_tweaks(self):
+        if not self.ai_suggested_tweaks:
+            return
+            
+        from engine.tweaks import TWEAKS
+        import tkinter.messagebox as messagebox
+        
+        all_tweaks = []
+        for cat in TWEAKS.values():
+            all_tweaks.extend(cat)
+            
+        failed_tweaks = []
+        for tweak_title in self.ai_suggested_tweaks:
+            tweak_obj = next((t for t in all_tweaks if t["title"] == tweak_title), None)
+            if tweak_obj:
+                try:
+                    ok, _ = tweak_obj["check"]()
+                    if ok is False:
+                        failed_tweaks.append(tweak_obj)
+                except:
+                    failed_tweaks.append(tweak_obj)
+                    
+        if not failed_tweaks:
+            messagebox.showinfo("Sistem Analizi", "Mükemmel! Yapay zekanın önerdiği TIKKI ayarlar sisteminize başarıyla işlenmiş durumda. Başarısız veya atlanmış bir ayar bulunamadı.")
+            return
+            
+        for t in failed_tweaks:
+            msg = (f"Ayar: {t['title']}\n\n"
+                   f"Neden Uygulanmadı/Atlandı?\n"
+                   f"Bu ayar donanımınız (örn. sistemin bu özelliği desteklememesi), eski sürüm Windows yapısı veya yetki kısıtlaması nedeniyle otomatik olarak es geçildi veya başarısız oldu.\n\n"
+                   f"Eğer uygularsanız Avantajı/Etkisi:\n{t.get('advantage', t.get('desc', 'Bilinmiyor'))}\n\n"
+                   f"Yine de riskleri kabul edip ZORLA UYGULAMAK istiyor musunuz?")
+            
+            resp = messagebox.askyesno("Hata Analizi & Onay", msg)
+            if resp:
+                try:
+                    t["apply"]()
+                except Exception as e:
+                    messagebox.showerror("Hata", f"Zorla uygulama tamamen başarısız oldu:\n{e}")
+                    
+        messagebox.showinfo("İşlem Bitti", "Zorla uygulama komutları tamamlandı. Durumu görmek için tekrar 'Ayarları Doğrula' butonuna basabilirsiniz.")
 
     def _apply_ai_tweaks(self):
         if not self.ai_suggested_tweaks:
