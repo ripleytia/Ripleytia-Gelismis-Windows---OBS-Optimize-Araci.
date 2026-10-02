@@ -625,21 +625,41 @@ class RipleytiaApp(ctk.CTk):
             text="Bilgisayarınızdaki oyunlar otomatik taranır. Ne tür bir performans artışı istediğinizi yazın, yapay zeka sizin için en uygun ve 100% güvenli tweakleri seçip listelesin!",
             text_color="#a09eab", justify="left", wraplength=700
         )
-        lbl_desc.pack(anchor="w", pady=(0, 20))
+        lbl_desc.pack(anchor="w", pady=(0, 10))
         
+        # Provider & Model Selection Frame
+        sel_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        sel_frame.pack(fill="x", pady=(0, 10))
+        
+        ctk.CTkLabel(sel_frame, text="Sağlayıcı:", font=ctk.CTkFont(weight="bold")).pack(side="left", padx=(0, 5))
+        self.ai_provider_var = ctk.StringVar(value="Google Gemini")
+        self.opt_provider = ctk.CTkOptionMenu(sel_frame, variable=self.ai_provider_var, values=["Google Gemini", "OpenRouter (OpenCode)", "Nvidia NIM"], command=self._on_ai_provider_change)
+        self.opt_provider.pack(side="left", padx=(0, 15))
+        
+        ctk.CTkLabel(sel_frame, text="Model:", font=ctk.CTkFont(weight="bold")).pack(side="left", padx=(0, 5))
+        self.ai_model_var = ctk.StringVar(value="gemini-3.8-flash")
+        self.opt_model = ctk.CTkOptionMenu(sel_frame, variable=self.ai_model_var, values=["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro", "gemini-2.5-flash"], width=200)
+        self.opt_model.pack(side="left")
         
         # API Key Frame
-        api_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        api_frame.pack(fill="x", pady=(0, 15))
+        self.api_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        self.api_frame.pack(fill="x", pady=(0, 15))
         
-        ctk.CTkLabel(api_frame, text="Gemini API Anahtarı:", font=ctk.CTkFont(weight="bold")).pack(side="left", padx=(0, 10))
-        self.entry_ai_api_key = ctk.CTkEntry(api_frame, width=350, placeholder_text="AI_API_KEY_BURAYA...")
+        self.lbl_api_key = ctk.CTkLabel(self.api_frame, text="Gemini API Anahtarı:", font=ctk.CTkFont(weight="bold"))
+        self.lbl_api_key.pack(side="left", padx=(0, 10))
+        
+        self.entry_ai_api_key = ctk.CTkEntry(self.api_frame, width=280, placeholder_text="API Anahtarı...")
         self.entry_ai_api_key.pack(side="left", padx=(0, 10))
+        
+        btn_save_api = ctk.CTkButton(self.api_frame, text="💾 Kaydet", width=80, command=self._save_current_api_key)
+        btn_save_api.pack(side="left", padx=(0, 10))
+        
+        self.btn_get_api = ctk.CTkButton(self.api_frame, text="🔑 API Anahtarı Al", width=120, fg_color="#1d3557", hover_color="#457b9d", command=self._open_api_url)
+        self.btn_get_api.pack(side="left")
+        
+        # Load initial api key
         if self.app_config.get("gemini_api_key"):
             self.entry_ai_api_key.insert(0, self.app_config.get("gemini_api_key"))
-            
-        btn_save_api = ctk.CTkButton(api_frame, text="💾 Kaydet", width=80, command=lambda: self.save_api_key(self.entry_ai_api_key.get()))
-        btn_save_api.pack(side="left")
         
         # Prompt Box
         self.ai_prompt = ctk.CTkTextbox(frame, height=100, border_color="#54288a", border_width=1, fg_color="#13111C")
@@ -647,7 +667,7 @@ class RipleytiaApp(ctk.CTk):
         self.ai_prompt.insert("1.0", "Örnek: Valorant oynarken anlık FPS dropları yiyorum ve arkada Discord/Spotify açık oluyor. Sistemimi oyun için optimize et.")
         
         # Result Box
-        self.ai_result_box = ctk.CTkTextbox(frame, height=250, border_color="#54288a", border_width=1, fg_color="#0a0a0c", state="disabled")
+        self.ai_result_box = ctk.CTkTextbox(frame, height=200, border_color="#54288a", border_width=1, fg_color="#0a0a0c", state="disabled")
         self.ai_result_box.pack(fill="x", pady=(0, 15))
         
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
@@ -671,21 +691,79 @@ class RipleytiaApp(ctk.CTk):
         
         self.ai_suggested_tweaks = []
 
+    def _on_ai_provider_change(self, choice):
+        self.entry_ai_api_key.delete(0, "end")
+        if choice == "Google Gemini":
+            self.opt_model.configure(values=["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro", "gemini-2.5-flash"])
+            self.ai_model_var.set("gemini-3.8-flash")
+            self.lbl_api_key.configure(text="Gemini API Anahtarı:")
+            val = self.app_config.get("gemini_api_key", "")
+            if val: self.entry_ai_api_key.insert(0, val)
+        elif choice == "OpenRouter (OpenCode)":
+            self.opt_model.configure(values=["google/gemini-2.0-flash-lite-preview-02-05:free", "meta-llama/llama-3.3-70b-instruct:free", "mistralai/mistral-7b-instruct:free"])
+            self.ai_model_var.set("google/gemini-2.0-flash-lite-preview-02-05:free")
+            self.lbl_api_key.configure(text="OpenCode API Anahtarı:")
+            val = self.app_config.get("opencode_api_key", "")
+            if val: self.entry_ai_api_key.insert(0, val)
+        elif choice == "Nvidia NIM":
+            self.opt_model.configure(values=["meta/llama-3.1-8b-instruct", "meta/llama-3.1-70b-instruct", "nvidia/nemotron-4-340b-instruct"])
+            self.ai_model_var.set("meta/llama-3.1-8b-instruct")
+            self.lbl_api_key.configure(text="Nvidia API Anahtarı:")
+            val = self.app_config.get("nvidia_api_key", "")
+            if val: self.entry_ai_api_key.insert(0, val)
+            
+    def _open_api_url(self):
+        import webbrowser
+        choice = self.ai_provider_var.get()
+        if choice == "Google Gemini":
+            webbrowser.open("https://aistudio.google.com/app/apikey")
+        elif choice == "OpenRouter (OpenCode)":
+            webbrowser.open("https://openrouter.ai/keys")
+        elif choice == "Nvidia NIM":
+            webbrowser.open("https://build.nvidia.com/explore/discover")
+            
+    def _save_current_api_key(self):
+        import json
+        choice = self.ai_provider_var.get()
+        val = self.entry_ai_api_key.get().strip()
+        if choice == "Google Gemini":
+            self.app_config["gemini_api_key"] = val
+            if hasattr(self, 'entry_gemini_key') and self.entry_gemini_key.get() != val:
+                self.entry_gemini_key.delete(0, 'end')
+                self.entry_gemini_key.insert(0, val)
+        elif choice == "OpenRouter (OpenCode)":
+            self.app_config["opencode_api_key"] = val
+        elif choice == "Nvidia NIM":
+            self.app_config["nvidia_api_key"] = val
+            
+        try:
+            with open(self.config_file, "w", encoding="utf-8") as cf:
+                json.dump(self.app_config, cf)
+            import tkinter.messagebox as messagebox
+            messagebox.showinfo("Başarılı", f"{choice} API Anahtarı hafızaya başarıyla kaydedildi!")
+        except Exception as e:
+            import tkinter.messagebox as messagebox
+            messagebox.showerror("Hata", f"Kaydedilemedi: {e}")
+
     def _run_ai_assistant(self):
+        import tkinter.messagebox as messagebox
         prompt = self.ai_prompt.get("1.0", "end-1c").strip()
         if not prompt or "Örnek:" in prompt:
             messagebox.showwarning("Uyarı", "Lütfen bir istek yazın.")
             return
             
         key = self.entry_ai_api_key.get().strip()
+        provider = self.ai_provider_var.get()
+        model = self.ai_model_var.get()
+        
         if not key:
-            messagebox.showwarning("Uyarı", "Lütfen Gemini API anahtarınızı girin ve kaydedin.")
+            messagebox.showwarning("Uyarı", f"Lütfen {provider} API anahtarınızı girin ve kaydedin.")
             return
             
         self.btn_send_prompt.configure(state="disabled", text="Yapay Zeka Düşünüyor...")
         self.ai_result_box.configure(state="normal")
         self.ai_result_box.delete("1.0", "end")
-        self.ai_result_box.insert("1.0", "Bilgisayar taranıyor ve yapay zeka analiz yapıyor. Lütfen bekleyin...")
+        self.ai_result_box.insert("1.0", f"{provider} ({model}) üzerinden analiz yapılıyor. Lütfen bekleyin...")
         self.ai_result_box.configure(state="disabled")
         
         def worker():
@@ -696,11 +774,11 @@ class RipleytiaApp(ctk.CTk):
                 for cat in TWEAKS.values():
                     all_tweaks.extend(cat)
                 
-                result = ask_ai_tweaks(prompt, self.hw_data, all_tweaks, key)
+                result = ask_ai_tweaks(prompt, self.hw_data, all_tweaks, provider, model, key)
                 
                 self.ai_suggested_tweaks = result.get("selected_tweaks", [])
                 
-                res_text = f"=== YAPAY ZEKA ANALİZİ ===\n\n"
+                res_text = f"=== YAPAY ZEKA ANALİZİ ({provider} - {model}) ===\n\n"
                 res_text += f"Açıklama: {result.get('explanation', '')}\n"
                 res_text += f"Beklenen FPS Artışı: {result.get('estimated_fps_boost', '')}\n"
                 res_text += f"Donanım İyileşmesi: {result.get('hardware_improvement', '')}\n\n"
