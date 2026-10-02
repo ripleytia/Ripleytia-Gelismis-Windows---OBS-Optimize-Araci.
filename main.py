@@ -272,6 +272,7 @@ class RipleytiaApp(ctk.CTk):
         self.tab_net = self.tabview.add("🌐 Ağ & Düşük Gecikme")
         self.tab_fivem = self.tabview.add("🎯 FiveM & Oyunlar")
         self.tab_obs = self.tabview.add("🎥 OBS Stüdyo & Yapay Zeka")
+        self.tab_ai_assistant = self.tabview.add("🤖 Yapay Zeka Asistanı (V2)")
 
         # Sekmeleri Doldur
         self._build_dashboard_tab()
@@ -283,6 +284,7 @@ class RipleytiaApp(ctk.CTk):
         self._build_tweak_tab(self.tab_net, "network")
         self._build_tweak_tab(self.tab_fivem, "fivem")
         self._build_obs_tab()
+        self._build_ai_assistant_tab()
 
     # --------------------------------------------------------------------------
     # 3. GÖSTERGE PANELİ (DASHBOARD)
