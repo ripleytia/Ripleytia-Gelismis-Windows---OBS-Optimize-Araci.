@@ -633,7 +633,7 @@ class RipleytiaApp(ctk.CTk):
         
         ctk.CTkLabel(sel_frame, text="Sağlayıcı:", font=ctk.CTkFont(weight="bold")).pack(side="left", padx=(0, 5))
         self.ai_provider_var = ctk.StringVar(value="Google Gemini")
-        self.opt_provider = ctk.CTkOptionMenu(sel_frame, variable=self.ai_provider_var, values=["Google Gemini", "OpenRouter (OpenCode)", "Nvidia NIM"], command=self._on_ai_provider_change)
+        self.opt_provider = ctk.CTkOptionMenu(sel_frame, variable=self.ai_provider_var, values=["Google Gemini", "Pollinations.ai (Ücretsiz)", "OpenRouter (OpenCode)", "Nvidia NIM"], command=self._on_ai_provider_change)
         self.opt_provider.pack(side="left", padx=(0, 15))
         
         ctk.CTkLabel(sel_frame, text="Model:", font=ctk.CTkFont(weight="bold")).pack(side="left", padx=(0, 5))
@@ -687,27 +687,46 @@ class RipleytiaApp(ctk.CTk):
             font=ctk.CTkFont(size=14, weight="bold"),
             state="disabled", command=self._apply_ai_tweaks
         )
-        self.btn_apply_ai.pack(side="left")
+        
+        self.btn_apply_ai.pack(side="left", padx=(0, 10))
+        
+        self.btn_verify_ai = ctk.CTkButton(
+            btn_frame, text="🔍 Ayarları Doğrula", 
+            fg_color="#d97706", hover_color="#b45309", 
+            font=ctk.CTkFont(size=14, weight="bold"),
+            state="disabled", command=self._verify_ai_tweaks
+        )
+        self.btn_verify_ai.pack(side="left")
+
         
         self.ai_suggested_tweaks = []
 
     def _on_ai_provider_change(self, choice):
         self.entry_ai_api_key.delete(0, "end")
+        self.entry_ai_api_key.configure(state="normal")
+        self.btn_get_api.configure(state="normal")
         if choice == "Google Gemini":
-            self.opt_model.configure(values=["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro", "gemini-2.5-flash"])
+            self.opt_model.configure(values=["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro"])
             self.ai_model_var.set("gemini-3.8-flash")
             self.lbl_api_key.configure(text="Gemini API Anahtarı:")
             val = self.app_config.get("gemini_api_key", "")
             if val: self.entry_ai_api_key.insert(0, val)
+        elif choice == "Pollinations.ai (Ücretsiz)":
+            self.opt_model.configure(values=["openai", "llama", "mistral"])
+            self.ai_model_var.set("openai")
+            self.lbl_api_key.configure(text="API Key Gerekmez:")
+            self.entry_ai_api_key.insert(0, "Sınırsız ücretsiz mod devrede!")
+            self.entry_ai_api_key.configure(state="disabled")
+            self.btn_get_api.configure(state="disabled")
         elif choice == "OpenRouter (OpenCode)":
-            self.opt_model.configure(values=["google/gemini-2.0-flash-lite-preview-02-05:free", "meta-llama/llama-3.3-70b-instruct:free", "mistralai/mistral-7b-instruct:free"])
-            self.ai_model_var.set("google/gemini-2.0-flash-lite-preview-02-05:free")
+            self.opt_model.configure(values=["qwen/qwen3.8-27b:free", "google/gemma-4-31b-it:free", "nvidia/nemotron-3.5-lightning:free"])
+            self.ai_model_var.set("qwen/qwen3.8-27b:free")
             self.lbl_api_key.configure(text="OpenCode API Anahtarı:")
             val = self.app_config.get("opencode_api_key", "")
             if val: self.entry_ai_api_key.insert(0, val)
         elif choice == "Nvidia NIM":
-            self.opt_model.configure(values=["meta/llama-3.1-8b-instruct", "meta/llama-3.1-70b-instruct", "nvidia/nemotron-4-340b-instruct"])
-            self.ai_model_var.set("meta/llama-3.1-8b-instruct")
+            self.opt_model.configure(values=["deepseek-ai/deepseek-v4.1-flash", "ai21labs/jamba-1.5-large-instruct", "01-ai/yi-large"])
+            self.ai_model_var.set("deepseek-ai/deepseek-v4.1-flash")
             self.lbl_api_key.configure(text="Nvidia API Anahtarı:")
             val = self.app_config.get("nvidia_api_key", "")
             if val: self.entry_ai_api_key.insert(0, val)
@@ -756,7 +775,7 @@ class RipleytiaApp(ctk.CTk):
         provider = self.ai_provider_var.get()
         model = self.ai_model_var.get()
         
-        if not key:
+        if not key and provider != "Pollinations.ai (Ücretsiz)":
             messagebox.showwarning("Uyarı", f"Lütfen {provider} API anahtarınızı girin ve kaydedin.")
             return
             
@@ -792,6 +811,7 @@ class RipleytiaApp(ctk.CTk):
                 self.ai_result_box.configure(state="disabled")
                 
                 self.btn_apply_ai.configure(state="normal")
+                self.btn_verify_ai.configure(state="normal")
                 
             except Exception as e:
                 self.ai_result_box.configure(state="normal")
@@ -801,6 +821,48 @@ class RipleytiaApp(ctk.CTk):
             finally:
                 self.btn_send_prompt.configure(state="normal", text="🚀 Prompt'u Gönder (AI Hesapla)")
                 
+        import threading
+        threading.Thread(target=worker, daemon=True).start()
+
+    
+    def _verify_ai_tweaks(self):
+        if not self.ai_suggested_tweaks:
+            return
+            
+        def worker():
+            from engine.tweaks import TWEAKS
+            self.ai_result_box.configure(state="normal")
+            self.ai_result_box.delete("1.0", "end")
+            self.ai_result_box.insert("end", "=== SİSTEM DURUMU ANALİZİ (DOĞRULAMA) ===\n\n")
+            
+            all_tweaks = []
+            for cat in TWEAKS.values():
+                all_tweaks.extend(cat)
+                
+            for tweak_title in self.ai_suggested_tweaks:
+                tweak_obj = next((t for t in all_tweaks if t["title"] == tweak_title), None)
+                if tweak_obj:
+                    try:
+                        ok, txt = tweak_obj["check"]()
+                        
+                        # Eğer check fonksiyonu regedit (HKLM/HKCU) kontrol ediyorsa yeniden başlatma uyarısı koy
+                        import inspect
+                        src = inspect.getsource(tweak_obj["apply"])
+                        needs_restart = "reg_set(" in src or "HKLM" in src or "HKCU" in src
+                        restart_txt = " (Yeniden Başlatma Gerekir)" if needs_restart else ""
+                        
+                        if ok is True:
+                            self.ai_result_box.insert("end", f"✅ UYGULANMIŞ: {tweak_title} -> {txt}{restart_txt}\n")
+                        elif ok is False:
+                            self.ai_result_box.insert("end", f"❌ UYGULANMAMIŞ (Devre Dışı): {tweak_title}\n")
+                        else:
+                            self.ai_result_box.insert("end", f"ℹ️ DURUM: {tweak_title} -> {txt}{restart_txt}\n")
+                    except Exception as e:
+                        self.ai_result_box.insert("end", f"⚠️ HATA (Okunamadı): {tweak_title} -> {e}\n")
+            
+            self.ai_result_box.insert("end", "\nAnaliz Tamamlandı. ✅ İşaretli olanlar bilgisayarınızda şu an devrede olan ayarlardır.")
+            self.ai_result_box.configure(state="disabled")
+            
         import threading
         threading.Thread(target=worker, daemon=True).start()
 
