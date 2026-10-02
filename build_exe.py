@@ -3,10 +3,10 @@ import shutil
 import zipfile
 import os
 
-print("=== Ripleytia ST Opti V2.1 EXE Derlemesi Başlıyor ===")
-base_dir = r"C:\Users\Ripleytia\Documents\Ripleytia_ST_Opti_V2"
-desktop_path = r"C:\Users\Ripleytia\Desktop"
-output_name = "Ripleytia ST Opti V2"
+print("=== Ripleytia Windows Optimizer V2.1 EXE Derlemesi Başlıyor ===")
+base_dir = os.path.dirname(os.path.abspath(__file__))
+desktop_path = os.path.join(os.environ['USERPROFILE'], 'Desktop')
+output_name = "Ripleytia Optimizer V2"
 ico_path = os.path.join(base_dir, "assets", "icon.ico")
 version_path = os.path.join(base_dir, "version_info.txt")
 
@@ -26,7 +26,7 @@ cmd = [
     os.path.join(base_dir, "main.py")
 ]
 
-print("PyInstaller çalıştırılıyor:")
+print("PyInstaller Çalıştırılıyor:")
 print(" ".join(cmd))
 res = subprocess.run(cmd, cwd=base_dir, capture_output=True, text=True)
 print("Return code:", res.returncode)
