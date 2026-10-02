@@ -50,6 +50,17 @@ class RipleytiaApp(ctk.CTk):
         self.configure(fg_color="#0b0612")
 
         # Global State
+        
+        import json
+        self.config_file = "config.json"
+        self.app_config = {}
+        if os.path.exists(self.config_file):
+            try:
+                with open(self.config_file, "r", encoding="utf-8") as cf:
+                    self.app_config = json.load(cf)
+            except:
+                pass
+
         self.hw_data = {}
         self.speed_data = {"ping": 0.0, "download": 0.0, "upload": 0.0}
         self.is_admin_user = is_admin()
@@ -616,6 +627,20 @@ class RipleytiaApp(ctk.CTk):
         )
         lbl_desc.pack(anchor="w", pady=(0, 20))
         
+        
+        # API Key Frame
+        api_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        api_frame.pack(fill="x", pady=(0, 15))
+        
+        ctk.CTkLabel(api_frame, text="Gemini API Anahtarı:", font=ctk.CTkFont(weight="bold")).pack(side="left", padx=(0, 10))
+        self.entry_ai_api_key = ctk.CTkEntry(api_frame, width=350, placeholder_text="AI_API_KEY_BURAYA...")
+        self.entry_ai_api_key.pack(side="left", padx=(0, 10))
+        if self.app_config.get("gemini_api_key"):
+            self.entry_ai_api_key.insert(0, self.app_config.get("gemini_api_key"))
+            
+        btn_save_api = ctk.CTkButton(api_frame, text="💾 Kaydet", width=80, command=lambda: self.save_api_key(self.entry_ai_api_key.get()))
+        btn_save_api.pack(side="left")
+        
         # Prompt Box
         self.ai_prompt = ctk.CTkTextbox(frame, height=100, border_color="#54288a", border_width=1, fg_color="#13111C")
         self.ai_prompt.pack(fill="x", pady=(0, 15))
@@ -652,9 +677,9 @@ class RipleytiaApp(ctk.CTk):
             messagebox.showwarning("Uyarı", "Lütfen bir istek yazın.")
             return
             
-        key = self.entry_gemini_key.get().strip()
+        key = self.entry_ai_api_key.get().strip()
         if not key:
-            messagebox.showwarning("Uyarı", "Lütfen OBS Stüdyo & AI sekmesinden Gemini API anahtarınızı girin.")
+            messagebox.showwarning("Uyarı", "Lütfen Gemini API anahtarınızı girin ve kaydedin.")
             return
             
         self.btn_send_prompt.configure(state="disabled", text="Yapay Zeka Düşünüyor...")
@@ -1066,6 +1091,21 @@ class RipleytiaApp(ctk.CTk):
     # --------------------------------------------------------------------------
     # 7. ASENKRON İŞLEMLER VE AKSİYONLAR
     # --------------------------------------------------------------------------
+    
+    def save_api_key(self, key_value):
+        import json
+        key_value = key_value.strip()
+        self.app_config["gemini_api_key"] = key_value
+        if hasattr(self, 'entry_gemini_key') and self.entry_gemini_key.get() != key_value:
+            self.entry_gemini_key.delete(0, 'end')
+            self.entry_gemini_key.insert(0, key_value)
+        try:
+            with open(self.config_file, "w", encoding="utf-8") as cf:
+                json.dump(self.app_config, cf)
+            messagebox.showinfo("Başarılı", "API Anahtarı hafızaya başarıyla kaydedildi!")
+        except Exception as e:
+            messagebox.showerror("Hata", f"Kaydedilemedi: {e}")
+
     def _initial_hw_scan(self):
         self.log("Donanım bileşenleri taranıyor...")
         hw = get_system_hardware()
@@ -1109,7 +1149,7 @@ class RipleytiaApp(ctk.CTk):
     def _generate_ai_profile(self):
         platform = self.combo_platform.get()
         pname = self.entry_profile_name.get().strip() or "Ripleytia AI Pro"
-        key = self.entry_gemini_key.get().strip()
+        key = self.entry_ai_api_key.get().strip()
 
         self.btn_gen_ai_profile.configure(state="disabled", text="AI Hesaplanıyor...")
         self.log(f"Yapay Zeka Profili hesaplanıyor ({platform} için)...")
