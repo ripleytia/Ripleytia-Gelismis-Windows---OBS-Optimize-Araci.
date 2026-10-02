@@ -774,3 +774,78 @@ def create_restore_point(desc="Ripleytia_Opti_V2_1_RestorePoint"):
 
 def restart_explorer():
     return run_ps("Stop-Process -Name explorer -Force")
+
+
+# --- V2 NEW TWEAKS ---
+TWEAKS["services"].extend([
+    {
+        "id": "svc_sysmain",
+        "title": "SysMain (Superfetch) Kapatma",
+        "desc": "Windows'un sık kullanılan uygulamaları belleğe (RAM) önceden yüklemesini sağlayan servisi kapatır.",
+        "advantage": "Diskin (özellikle HDD veya eski SSD) %100 kullanımını engeller, RAM tüketimini azaltır ve oyun içi ani takılmaları çözer.",
+        "check": lambda: (
+            reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\SysMain", "Start") == 4,
+            "SysMain: " + ("Devre Dışı (4)" if reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\SysMain", "Start") == 4 else "Aktif")
+        ),
+        "apply": lambda: (
+            run_cmd("sc stop SysMain"),
+            run_cmd("sc config SysMain start= disabled"),
+            reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\SysMain", "Start", 4)
+        ),
+        "undo": lambda: (
+            run_cmd("sc config SysMain start= auto"),
+            run_cmd("sc start SysMain"),
+            reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\SysMain", "Start", 2)
+        )
+    },
+    {
+        "id": "svc_xbox_live",
+        "title": "Xbox Live Hizmetlerini Kapatma",
+        "desc": "Xbox Live oyun kayıtları, kimlik doğrulama ve ağ hizmetlerini kapatır.",
+        "advantage": "Arka planda Xbox hizmetlerinin gereksiz ağ ve RAM tüketimini engeller. (Xbox Game Pass veya Microsoft Store oyunları oynuyorsanız kapatmayın!).",
+        "warning": "⚠️ Forza Horizon, Sea of Thieves gibi Xbox Live gerektiren oyunları oynuyorsanız 'Geri Al' ile açmalısınız.",
+        "check": lambda: (
+            reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\XblAuthManager", "Start") == 4,
+            "Xbox: " + ("Devre Dışı (4)" if reg_get(HKLM, r"SYSTEM\CurrentControlSet\Services\XblAuthManager", "Start") == 4 else "Aktif")
+        ),
+        "apply": lambda: (
+            run_cmd("sc stop XblAuthManager"),
+            run_cmd("sc config XblAuthManager start= disabled"),
+            run_cmd("sc stop XblGameSave"),
+            run_cmd("sc config XblGameSave start= disabled"),
+            run_cmd("sc stop XboxNetApiSvc"),
+            run_cmd("sc config XboxNetApiSvc start= disabled"),
+            reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\XblAuthManager", "Start", 4)
+        ),
+        "undo": lambda: (
+            run_cmd("sc config XblAuthManager start= demand"),
+            run_cmd("sc config XblGameSave start= demand"),
+            run_cmd("sc config XboxNetApiSvc start= demand"),
+            reg_set(HKLM, r"SYSTEM\CurrentControlSet\Services\XblAuthManager", "Start", 3)
+        )
+    }
+])
+
+TWEAKS["perf_boost"].extend([
+    {
+        "id": "sys_background_apps",
+        "title": "Arka Plan Uygulamalarını Kapatma",
+        "desc": "UWP (Microsoft Store) uygulamalarının arka planda gizlice çalışmasını engeller.",
+        "advantage": "RAM ve CPU tasarrufu sağlar, gereksiz işlem (process) sayısını azaltır.",
+        "check": lambda: (
+            reg_get(HKCU, r"Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications", "GlobalUserDisabled") == 1,
+            "Arka Plan Uygulamaları: " + ("Kapalı" if reg_get(HKCU, r"Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications", "GlobalUserDisabled") == 1 else "Açık")
+        ),
+        "apply": lambda: (
+            reg_set(HKCU, r"Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications", "GlobalUserDisabled", 1),
+            reg_set(HKLM, r"Software\Policies\Microsoft\Windows\AppPrivacy", "LetAppsRunInBackground", 2)
+        ),
+        "undo": lambda: (
+            reg_set(HKCU, r"Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications", "GlobalUserDisabled", 0),
+            reg_set(HKLM, r"Software\Policies\Microsoft\Windows\AppPrivacy", "LetAppsRunInBackground", 0)
+        )
+    }
+])
+
+ALL_RECOMMENDED.extend([t for t in TWEAKS["services"] if t["id"] in ["svc_sysmain"]])
+ALL_RECOMMENDED.extend([t for t in TWEAKS["perf_boost"] if t["id"] in ["sys_background_apps"]])

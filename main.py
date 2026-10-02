@@ -597,6 +597,142 @@ class RipleytiaApp(ctk.CTk):
     # --------------------------------------------------------------------------
     # 5. OBS STÜDYO & YAPAY ZEKA SEKMESİ
     # --------------------------------------------------------------------------
+    
+    def _build_ai_assistant_tab(self):
+        from engine.ai_assistant import ask_ai_tweaks
+        
+        frame = ctk.CTkScrollableFrame(self.tab_ai_assistant, fg_color="transparent")
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        lbl_title = ctk.CTkLabel(frame, text="Yapay Zeka (AI) Tweak Asistanı (V2)", font=ctk.CTkFont(size=20, weight="bold"), text_color="#d8b4fe")
+        lbl_title.pack(anchor="w", pady=(0, 10))
+        
+        lbl_desc = ctk.CTkLabel(
+            frame, 
+            text="Bilgisayarınızdaki oyunlar otomatik taranır. Ne tür bir performans artışı istediğinizi yazın, yapay zeka sizin için en uygun ve 100% güvenli tweakleri seçip listelesin!",
+            text_color="#a09eab", justify="left", wraplength=700
+        )
+        lbl_desc.pack(anchor="w", pady=(0, 20))
+        
+        # Prompt Box
+        self.ai_prompt = ctk.CTkTextbox(frame, height=100, border_color="#54288a", border_width=1, fg_color="#13111C")
+        self.ai_prompt.pack(fill="x", pady=(0, 15))
+        self.ai_prompt.insert("1.0", "Örnek: Valorant oynarken anlık FPS dropları yiyorum ve arkada Discord/Spotify açık oluyor. Sistemimi oyun için optimize et.")
+        
+        # Result Box
+        self.ai_result_box = ctk.CTkTextbox(frame, height=250, border_color="#54288a", border_width=1, fg_color="#0a0a0c", state="disabled")
+        self.ai_result_box.pack(fill="x", pady=(0, 15))
+        
+        btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        btn_frame.pack(fill="x")
+        
+        self.btn_send_prompt = ctk.CTkButton(
+            btn_frame, text="🚀 Prompt'u Gönder (AI Hesapla)", 
+            fg_color="#54288a", hover_color="#3a1e5c", 
+            font=ctk.CTkFont(size=14, weight="bold"),
+            command=self._run_ai_assistant
+        )
+        self.btn_send_prompt.pack(side="left", padx=(0, 10))
+        
+        self.btn_apply_ai = ctk.CTkButton(
+            btn_frame, text="⚡ Önerilen Tweakleri Uygula", 
+            fg_color="#00b894", hover_color="#008e76", 
+            font=ctk.CTkFont(size=14, weight="bold"),
+            state="disabled", command=self._apply_ai_tweaks
+        )
+        self.btn_apply_ai.pack(side="left")
+        
+        self.ai_suggested_tweaks = []
+
+    def _run_ai_assistant(self):
+        prompt = self.ai_prompt.get("1.0", "end-1c").strip()
+        if not prompt or "Örnek:" in prompt:
+            messagebox.showwarning("Uyarı", "Lütfen bir istek yazın.")
+            return
+            
+        key = self.entry_gemini_key.get().strip()
+        if not key:
+            messagebox.showwarning("Uyarı", "Lütfen OBS Stüdyo & AI sekmesinden Gemini API anahtarınızı girin.")
+            return
+            
+        self.btn_send_prompt.configure(state="disabled", text="Yapay Zeka Düşünüyor...")
+        self.ai_result_box.configure(state="normal")
+        self.ai_result_box.delete("1.0", "end")
+        self.ai_result_box.insert("1.0", "Bilgisayar taranıyor ve yapay zeka analiz yapıyor. Lütfen bekleyin...")
+        self.ai_result_box.configure(state="disabled")
+        
+        def worker():
+            try:
+                from engine.ai_assistant import ask_ai_tweaks
+                from engine.tweaks import TWEAKS
+                all_tweaks = []
+                for cat in TWEAKS.values():
+                    all_tweaks.extend(cat)
+                
+                result = ask_ai_tweaks(prompt, self.hw_data, all_tweaks, key)
+                
+                self.ai_suggested_tweaks = result.get("selected_tweaks", [])
+                
+                res_text = f"=== YAPAY ZEKA ANALİZİ ===\n\n"
+                res_text += f"Açıklama: {result.get('explanation', '')}\n"
+                res_text += f"Beklenen FPS Artışı: {result.get('estimated_fps_boost', '')}\n"
+                res_text += f"Donanım İyileşmesi: {result.get('hardware_improvement', '')}\n\n"
+                res_text += "Önerilen Tweakler:\n"
+                for t in self.ai_suggested_tweaks:
+                    res_text += f"- {t}\n"
+                    
+                self.ai_result_box.configure(state="normal")
+                self.ai_result_box.delete("1.0", "end")
+                self.ai_result_box.insert("1.0", res_text)
+                self.ai_result_box.configure(state="disabled")
+                
+                self.btn_apply_ai.configure(state="normal")
+                
+            except Exception as e:
+                self.ai_result_box.configure(state="normal")
+                self.ai_result_box.delete("1.0", "end")
+                self.ai_result_box.insert("1.0", f"Hata Oluştu:\n{str(e)}")
+                self.ai_result_box.configure(state="disabled")
+            finally:
+                self.btn_send_prompt.configure(state="normal", text="🚀 Prompt'u Gönder (AI Hesapla)")
+                
+        import threading
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _apply_ai_tweaks(self):
+        if not self.ai_suggested_tweaks:
+            return
+            
+        import tkinter.messagebox as messagebox
+        if not messagebox.askyesno("Onay", f"{len(self.ai_suggested_tweaks)} adet yapay zeka önerisi uygulanacak. Onaylıyor musunuz?"):
+            return
+            
+        def worker():
+            import tkinter.messagebox as messagebox
+            from engine.tweaks import TWEAKS
+            self.log("=== YAPAY ZEKA OPTİMİZASYONU BAŞLATILDI ===")
+            success_count = 0
+            
+            all_tweaks = []
+            for cat in TWEAKS.values():
+                all_tweaks.extend(cat)
+                
+            for tweak_title in self.ai_suggested_tweaks:
+                tweak_obj = next((t for t in all_tweaks if t["title"] == tweak_title), None)
+                if tweak_obj:
+                    try:
+                        self.log(f"Uygulanıyor: {tweak_title}...")
+                        tweak_obj["apply"]()
+                        success_count += 1
+                    except Exception as e:
+                        self.log(f"Hata ({tweak_title}): {e}")
+            
+            self.log(f"=== YAPAY ZEKA TAMAMLANDI: {success_count} ayar uygulandı. ===")
+            messagebox.showinfo("Tamamlandı", f"{success_count} adet yapay zeka optimizasyonu başarıyla uygulandı!")
+            
+        import threading
+        threading.Thread(target=worker, daemon=True).start()
+
     def _build_obs_tab(self):
         container = ctk.CTkScrollableFrame(self.tab_obs, fg_color="transparent")
         container.pack(fill="both", expand=True, padx=6, pady=6)

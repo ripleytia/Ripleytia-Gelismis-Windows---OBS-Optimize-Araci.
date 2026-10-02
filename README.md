@@ -149,3 +149,14 @@ Ripleytia_ST_Opti_V2/
 * **Geliştirici:** Ripleytia
 * **Lisans:** [MIT License](LICENSE)
 * **Destek & Geri Bildirim:** Her türlü öneri, hata bildirimi veya katkı için lütfen bir [Issue](../../issues) açmaktan çekinmeyin!
+
+
+## 🚀 V2 Büyük Güncellemesi (Ekim 2026)
+
+Bu sürüm ile Ripleytia Optimizer tamamen akıllandı ve kullanıcı deneyimi mükemmelleştirildi!
+
+**Yenilikler:**
+- **🤖 Yapay Zeka (AI) Tweak Asistanı:** Yüklü olan oyunlarınızı (Steam, Epic Games, Riot Games) otomatik tespit eden ve istediğiniz performansa göre en doğru, %100 güvenli ayarları listeleyip onayınızla uygulayan devasa bir asistan sekmesi eklendi!
+- **🧐 "Otomatik Uygulama" Yanılgısı Giderildi:** Uygulama artık açılışta hiçbir ayarı kendi kendine uygulamaz. "AKTİF" yazan ibareler, sadece o ayarın halihazırda Windows'unuzda yapıldığını gösterir. Artık kontrol tamamen sizde.
+- **🛡️ Yeni Servis ve Tweakler:** SysMain (Superfetch) ve gereksiz Xbox Live arka plan servislerini tek tıkla kapatabilme özellikleri eklendi.
+- **📝 Detaylı Açıklamalar:** Eklenen tüm yeni tweaklerin teknik açıklamaları, avantajları ve dezavantajları eklendi.
