@@ -79,7 +79,7 @@ def ask_ai_tweaks(user_prompt: str, hardware_info: dict, all_tweaks: list, api_k
     """
     
     response = client.models.generate_content(
-        model='gemini-2.5-flash',
+        model='gemini-3.8-flash',
         contents=sys_prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
