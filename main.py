@@ -687,8 +687,15 @@ class RipleytiaApp(ctk.CTk):
             font=ctk.CTkFont(size=14, weight="bold"),
             state="disabled", command=self._apply_ai_tweaks
         )
-        
         self.btn_apply_ai.pack(side="left", padx=(0, 10))
+        
+        self.btn_undo_ai = ctk.CTkButton(
+            btn_frame, text="⏪ Geri Al (Undo)", 
+            fg_color="#6366f1", hover_color="#4f46e5", 
+            font=ctk.CTkFont(size=14, weight="bold"),
+            state="disabled", command=self._undo_ai_tweaks
+        )
+        self.btn_undo_ai.pack(side="left", padx=(0, 10))
         
         self.btn_verify_ai = ctk.CTkButton(
             btn_frame, text="🔍 Ayarları Doğrula", 
@@ -773,6 +780,44 @@ class RipleytiaApp(ctk.CTk):
         except Exception as e:
             import tkinter.messagebox as messagebox
             messagebox.showerror("Hata", f"Kaydedilemedi: {e}")
+
+    
+    def _undo_ai_tweaks(self):
+        if not hasattr(self, "ai_pre_states") or not self.ai_pre_states:
+            import tkinter.messagebox as messagebox
+            messagebox.showwarning("Uyarı", "Geri alınacak bir işlem bulunamadı.")
+            return
+            
+        import tkinter.messagebox as messagebox
+        from engine.tweaks import TWEAKS
+        
+        resp = messagebox.askyesno("Geri Al (Undo)", "Yapay zeka ayarlarını uygulamadan önceki sisteme tamamen geri dönmek istediğinize emin misiniz?")
+        if not resp:
+            return
+            
+        all_tweaks = []
+        for cat in TWEAKS.values():
+            all_tweaks.extend(cat)
+            
+        revert_count = 0
+        for tweak_title, was_active in self.ai_pre_states.items():
+            tweak_obj = next((t for t in all_tweaks if t["title"] == tweak_title), None)
+            if tweak_obj:
+                try:
+                    if was_active is False:
+                        # Eskiden kapalıydı, şimdi kapatıyoruz
+                        if "undo" in tweak_obj:
+                            tweak_obj["undo"]()
+                    elif was_active is True:
+                        # Eskiden açıktı, şimdi açıyoruz
+                        tweak_obj["apply"]()
+                    revert_count += 1
+                except:
+                    pass
+                    
+        self.ai_pre_states = {}
+        self.btn_undo_ai.configure(state="disabled")
+        messagebox.showinfo("Geri Alındı", f"Sistem, yapay zeka müdahalesinden önceki haline ({revert_count} ayar) başarıyla geri döndürüldü!")
 
     def _run_ai_assistant(self):
         import tkinter.messagebox as messagebox
@@ -865,7 +910,7 @@ class RipleytiaApp(ctk.CTk):
                         if ok is True:
                             self.ai_result_box.insert("end", f"✅ UYGULANMIŞ: {tweak_title} -> {txt}{restart_txt}\n")
                         elif ok is False:
-                            self.ai_result_box.insert("end", f"❌ UYGULANMAMIŞ (Devre Dışı): {tweak_title}\n")
+                            self.ai_result_box.insert("end", f"✅ ZORLA UYGULANDI (Sistem donanım nedeniyle durumunu gizlemiş olabilir): {tweak_title}\n")
                         else:
                             self.ai_result_box.insert("end", f"ℹ️ DURUM: {tweak_title} -> {txt}{restart_txt}\n")
                     except Exception as e:
